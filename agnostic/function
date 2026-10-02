@@ -1,0 +1,3003 @@
+function getRandomNumber
+# 0 to 999999 (but really only 86400 possibilities
+{
+  perl -e '@a=localtime; $b = ($a[0]*73137) + ($a[1]*73237) + ($a[2]*2); print ($b % 1000000)'
+}
+
+function getRandomNumberUpTo
+{
+  max=$1 
+  perl -e "print int( rand $max ) + 1"
+} 
+
+function bold() {
+  echo "$(tput bold)$@$(tput sgr0)"
+}
+
+function uln () {
+  echo "$(tput smul)$@$(tput rmul)";
+}
+
+function isabsolute
+# close to being complete
+{
+    if [ `basename $1` == $1 ]; then
+	echo "not absolute"
+    else
+	echo "absolute"
+    fi
+}
+
+function ggrep
+{
+  local usage="Usage: genericgrep separator string filename"
+  local separator=$1
+  local string=$2
+  local filename=$3
+
+  if [ x$3 == x ]; then
+    echo $usage;
+    return 0;
+  fi
+
+  perl -e"
+  $/ = '$separator';
+  open IN, shift;
+  while ( <IN> ) { if ( m/$string/i ) { print; print \"\n--------------------------------------------\n\" } }" $filename
+  echo
+}
+
+function ggrepv
+# like grep -v
+{
+  local separator=$1
+  local string=$2
+  local filename=$3
+
+  perl -e"
+  $/ = '$separator';
+  open IN, shift;
+  while ( <IN> ) { unless ( m/$string/i ) { print; print \"\n--------------------------------------------\n\" } }" $filename
+  echo
+}
+
+
+function ngrep
+{
+  ggrep \} $1 $2
+}
+
+function nslookuprange
+{
+  local usage="Usage: nslookuprange subnet startnumber endnumber"
+  local subnet=$1
+  local startnumber=$2
+  local endnumber=$3
+
+  if [ x$3 == x ]; then
+    echo $usage;
+    return 0;
+  fi
+
+  echo "looping from $subnet.$startnumber to $subnet.$endnumber"
+  echo
+  for i in `count $startnumber $endnumber`;
+  do
+        ip=$subnet.$i
+        name=`nslookup $ip 2>/dev/null | grep name | awk ' { print $4 } '`
+        if [ x$name != x ]; then
+          echo "$ip   $name"
+        fi
+  done
+
+}
+
+function dns2table
+{
+  local usage="Usage: $0 subnet startnumber endnumber"
+  local subnet=$1
+  local startnumber=$2
+  local endnumber=$3
+
+  nslookuprange $1 $2 $3 | tail +3 | cut -f1-4 -d\. | awk ' { print " | " $2 " | " $1 " | "} '
+}
+
+function findcores
+{   
+    HERE=$PWD
+    cd $HOME/.startup
+    CORES=`find . -type f -name \*core`
+    FIRSTCORE=`echo $CORES | cut -f1 -d\ `
+    if [ x$FIRSTCORE != "x" ]; then
+	echo
+	for singlecore in $CORES; do echo $singlecore; done
+	echo
+        if ( _yes_no "Found cores:  delete them? " ); then
+            rm $CORES
+            echo "cores deleted"
+        else
+            echo "cores ignored"
+        fi
+    fi
+    cd $HERE 
+}
+
+function _getDetailedDate
+{
+    date '+%y%m%d%H%M%S'
+}
+
+function _getDetailedDate2
+{
+    date '+%Y-%m-%d_%H-%M-%S'
+}
+
+function _yes_no
+{ 
+    read -p "$1 " ans ans2;
+    if [ $ans = "y" -o $ans = "yes" ]; then 
+        return 0;
+    fi;  
+    return 1
+}
+
+function _get_spew_hosts
+{
+  SPEW_HOSTS=`cat ~/.startup/spew_hosts`
+}
+
+function _spew
+{
+  #rsync --cvs-exclude --delete -avze ssh $HOME/.startup ubante@$1:
+  #rsync --cvs-exclude --delete -avze ssh $HOME/.startup john.ubante@$1:
+  rsync --cvs-exclude --delete -avze ssh $HOME/.startup jubante@$1:
+}
+
+function _spew_insane
+{ 
+  _get_spew_hosts
+  for i in $SPEW_HOSTS
+  do
+    echo;
+    echo -- $i --;
+    _spew $i &
+    echo; 
+    sleep 1
+  done;
+}       
+
+function spew
+{
+  _get_spew_hosts
+  for i in $SPEW_HOSTS
+  do
+    echo;
+    echo -- $i --; 
+    _spew $i
+    echo;
+  done
+}
+
+function spewtohosts
+{
+  echo "ubante-4WAHTD6 is the truth"
+  for i in $@
+  do 
+    echo;
+    echo -- $i --;
+    _spew $i
+    echo;
+  done
+}
+
+function spewInsanely
+{   
+    if [ $HOSTNAME != "mucheither.sanfrancisco.corp.yahoo.com" ]; then
+        if ( _yes_no "You are on $HOSTNAME, is this cool?" ); then
+            _spew_insane
+        else
+            echo "exiting"
+        fi
+    else
+        _spew_insane
+    fi
+}
+
+function spewtonewhosts
+{
+  local newhosts=$@
+  LOGDIR=~/working/hosts/
+  LOGFILE=hostswithaccounts
+  HERE=$CWD
+
+  for host in $newhosts;
+  do
+    echo -- spewing to $host --
+    #ssh john.ubante@$host mkdir --mode=0700 .ssh
+    ssh jubante@$host mkdir --mode=0700 .ssh
+    #scp -rp ~/.ssh/id_rsa.pub john.ubante@$host:.ssh/authorized_keys
+    echo "push #1 of 3"
+    #ssh ubante@$host 'echo ubante@yahoo-inc.com > .forward'
+    #ssh john.ubante@$host 'echo john.ubante@locationlabs.com > .forward'
+    ssh jubante@$host 'echo jubante@pinterest.com > .forward'
+    echo " "
+    sleep 1
+    echo "push #2 of 3"
+    #ssh ubante@$host 'mkdir logs bin; ln -sf .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin'
+    #ssh john.ubante@$host 'mkdir logs bin; ln -sf .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin'
+    ssh jubante@$host 'mkdir logs bin; ln -sf .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin'
+    sleep 1
+    echo "push #3 of 3"
+    #cd ; scp -r .startup ubante@$host:
+    _spew $host
+    #ssh ubante@$host "ln -s .startup/vimrc .vimrc"
+    #ssh john.ubante@$host "ln -s .startup/vimrc .vimrc"
+    ssh jubante@$host "ln -s .startup/vimrc .vimrc"
+
+    cd $LOGDIR
+    co -l $LOGFILE
+    echo -n "$host, " >> $LOGFILE
+    date >> $LOGFILE
+    ci -mspewing -u $LOGFILE
+
+    cd $HERE
+  done
+  cd $HERE
+}
+
+function spewharder
+{
+  spewtonewhosts $1
+  ssh -v $1
+}
+
+function itogrep
+{ 
+    local usage="Usage: itogrep string path_to_log"
+    if [ x$1 == x ]; then
+        echo $usage;
+        return 0;
+    fi
+    if [ x$2 == x ]; then
+        echo $usage;
+        return 0;
+    fi
+    perl -e"
+    $/ = '<<<<<';
+    open IN, shift;
+    while ( <IN> ) { if ( m/$1/i ) { print } }" $2
+    echo
+}
+
+
+function ecf ()
+# force ec, mainly for root
+{
+    co -l $1
+    /usr/bin/vim $1
+    ci -u -m"nocomment" $1
+}
+
+function ec ()
+{
+	echo use git
+}
+
+function ec-old ()
+{
+    DIROWNER=`ls -ld . | awk ' { print $3 } '`
+    if [ $DIROWNER == "vobadm" ]; then
+        echo "You're in the vobs: try using ctec"
+        return
+    fi
+    if [ -h $1 ]; then
+        echo "ec failing: $1 is a symbolic link"
+	ls -ld $1
+        return
+    fi
+    if [ ! -d RCS ]; then
+        echo "no RCS directory - creating....";
+        mkdir RCS
+    fi
+    if [ -d $1 ]; then
+	echo "ec failing: $1 is a directory"
+	ls -ld $1
+	return
+    fi
+    if [ -w $1 ]; then
+        echo "$1 is already writable.  you sure you want to do this?"
+        echo "If so, try ci -u $1"
+	ls -ld $1
+        return
+    fi
+    touch $1
+    co -l $1;
+    /usr/bin/vim $1;
+    ci -u -m"nocomment" $1
+}
+
+function ec2 () 
+{ 
+    DIROWNER=`ls -ld . | awk ' { print $3 } '`
+    if [ $DIROWNER == "vobadm" ]; then
+	echo "You're in the vobs: try using ctec"
+	return
+    fi
+    if [ -h $1 ]; then
+	echo "ec failing: $1 is a symbolic link"
+	return
+    fi
+    if [ ! -d RCS ]; then
+        echo "no RCS directory - creating....";
+        mkdir RCS
+    fi
+    touch $1
+    co -l $1;
+    /usr/bin/vim $1;
+    ci -u $1
+}
+
+function ecdiff ()
+{
+  FILE=$1
+  CURRENT=`head -1 RCS/$1,v | cut -f2 -d\. | cut -f1 -d\;`
+  PREVIOUS=$(( $CURRENT - 1 ))
+  rcsdiff -r1.$PREVIOUS $1
+}
+
+function ecdiff2 ()
+{
+  FILE=$1
+  HERE=`pwd`
+  FILEDIR=`dirname $FILE`
+  FILENAME=`basename $FILE`
+  cd $FILEDIR
+  CURRENT=`head -1 RCS/$FILENAME,v | cut -f2 -d\. | cut -f1 -d\;`
+  PREVIOUS=$(( $CURRENT - 1 ))
+  rcsdiff -r1.$PREVIOUS $FILENAME
+  cd $HERE
+}
+
+
+function trans ()
+{
+        tr '[:upper:]' '[:lower:]' < $1 > $2
+}
+
+function TRANS ()
+{
+        tr '[:lower:]' '[:upper:]' < $1 > $2
+}
+
+function addup ()
+# You can also pipe numbers into:   awk '{s+=$1} END {print s}'
+{ 
+    ( echo -n "0 ";
+    for i in `cat $1`;
+    do
+        echo -n "$i + ";
+    done;
+    echo " p q" ) >/tmp/fu_adder$$;
+    dc /tmp/fu_adder$$
+}
+
+function rcfind ()
+{
+	find -L ~/.startup -type f -exec grep -i $1 {} /dev/null \; | egrep -v "\.git|RCS|elisp"
+}
+
+function rcfindw ()
+{
+	find -L ~/.startup -type f -exec grep -iw $1 {} /dev/null \; | egrep -v "\.git|RCS|elisp"
+}
+
+function alarm
+{
+	echo 'for i in dude punk dork numnuts farthead; do echo $i, Stand up; echo; sleep 10; done' > /tmp/fufu$$ ;
+	chmod a+x /tmp/fufu$$ ;
+	xterm -bg red -fg black -fn lucidasans-bolditalic-24 -geom 20x10 -e /tmp/fufu$$
+}
+
+function doseti ()
+{
+  cd $HOME
+  for i in working/seti*
+  do
+    cd $i
+    echo In $PWD...
+    ./setiathome-3.08.sparc-sun-solaris2.6 -nice 19 > /dev/null 2>&1 &
+    cd $HOME
+  done  
+}
+
+function dontseti
+{
+  local SETIPIDS=`ps -ef | grep [s]etiathome | awk ' { print $2 } '`
+  firstpid=`echo $SETIPIDS | cut -f1 -d\ `
+  if [ x$firstpid != "x" ]; then
+    echo "Number of seti processes to kill: `echo $SETIPIDS | wc -w`"
+    for pid in $SETIPIDS
+    do
+      kill $pid
+    done
+  fi
+}
+
+function checkseti
+{
+  local HERE=`pwd`
+  cd $HOME
+  for i in working/seti*
+  do
+    cd $i
+    grep prog state.sah
+    cd $HOME
+  done
+  uptime
+  SETIPIDS=`ps -ef | grep [s]etiathome | wc -l`
+  echo "Number of seti processes running: $SETIPIDS"
+  cd $HERE
+}
+
+function sg
+{
+  grep $1 `file * | egrep 'script|text' | cut -f1 -d:`
+}
+
+function jg
+{
+  cd $VOBS_HOME
+  echo "searching ...."
+  find . -name \*java | egrep -v "generated|java-lib|jakarta-tom|OptimizeIt|\/apache|logic|java\/examples" > /tmp/TempListJavaFiles$$
+  echo "grepping `wc -l /tmp/TempListJavaFiles$$` files"
+
+  for i in `cat /tmp/TempListJavaFiles$$`; do grep $1 $i /dev/null; done
+}  
+
+function helpLemonBlog
+{
+  echo "== 2006-07-31 - 14:50-22:00 PT PG&E outage causes SBC Optemon failure disconnecting Miranda {{bug|29680}} =="
+  echo "* '''Method of Problem Identification:''' All of Miranda was disconnected so identification was widespread and immediate."
+  echo "* '''Service Areas Affected:''' Access from Miranda was broken,  direct access between Hillview and SF was broken.  DNS, replication, SF-sourced emails, and access to the corporate VPN were all affected."
+  echo "* '''Problem Definition:''' A PG&E outage caused SBC hardware failure."
+  echo "* '''Problem Resolution:''' SBC dispatched a technician who determined the root hardware cause."
+  echo "* '''Damage Assessment:''' No client impact."
+  echo "* '''Follow Up Actions Required:''' Results from post-mortem to follow"
+  echo "--~~~~"
+}
+function helpSchedule
+{
+  echo "green means available"
+  echo "blue means committed"
+  echo "light blue means you're trying to dump this commit"
+}
+
+function helpIrc
+{
+  echo "http://usi.corp.yahoo.com/irc/"
+  echo "irssi -c irc.corp.yahoo-inc.com"
+  echo "/connect -ssl irc.corp.yahoo-inc.com 6697 FNjQEMJNhB0B ubante"
+  echo "/connect -ssl irc.corp.yahoo-inc.com 6697 demopass ubante"
+}
+
+function helpSql
+{
+  _helpSql | $PAGER
+}
+
+function _helpSql
+{
+  echo "* to have mysql figure out how much work it has to do: EXPLAIN blah blah"
+  echo "* convert name to rep_id: SELECT name, rep_id FROM ccconf.rep WHERE name LIKE \"%27127%\"; "
+  echo "* to list an agent's commits for today: SELECT rc.blocktime, rc.commit_room_schedule_id, name FROM cclog.rep_commits AS rc LEFT JOIN ccconf.commit_room_schedule USING(commit_room_schedule_id) LEFT JOIN ccconf.commit_room USING(commit_room_id) WHERE rep_id = 23013 AND rc.blocktime > '2006-07-16 00:00:00' AND rc.blocktime < '2006-07-16 23:59:59';"
+  echo "* to list all long calls: SELECT session_id, callcenter_id, maddr, campaign_id, rep_id, starttime, repstarttime, ((UNIX_TIMESTAMP() - UNIX_TIMESTAMP(starttime)) / 60) AS mins, endtime FROM ccroute.session WHERE starttime < date_sub(now(), interval 40 minute);"
+  echo "* to see if an agent uncommitted: SELECT blocktime, entrytime, state, conjugate_id FROM cclog.rep_commitlog WHERE blocktime > '2006-10-31 16:10:00' AND blocktime < '2006-11-01' AND rep_id=5460;"
+  echo "* to see if an agent is commited: SELECT * FROM cclog.rep_commits WHERE rep_id=28181 AND blocktime='2006-07-15 23:10:00';"
+  echo "* to make pretty, use \G instead of ;: SELECT *  FROM ccconf.rep WHERE rep_id = 27451\G"
+  echo "* to check if an agent is real - SELECT name FROM ccconf.rep WHERE rep_id = 6474;"
+  echo "* to find which cc an agent is FROM - SELECT name, callcenter_id FROM ccconf.rep WHERE rep_id = 27451;"
+  echo "    SELECT name FROM ccconf.callcenter WHERE callcenter_id = 10;"
+  echo "* SHOW columns IN rep;"
+  echo "* COUNT columns IN a table:"
+  echo "*   SELECT COUNT(*) FROM rep;"
+  echo "* to find password of testagent for WSOL: SELECT username, callcenter_id, password FROM ccconf.rep WHERE username = 'testagent' AND callcenter_id = 6;"
+  echo "* to start: service mysql start or su user, AND dbctl -c start"
+  echo "* to fix cardinality: ANALYZE TABLE ccconf.phut_store_phone;"
+  echo "* to show slave status: SHOW slave status\G"
+  echo "* to see how many calls were dropped FROM a crashed cmx: SELECT session_id, maddr, campaign_id, rep_id, calllength, starttime, endtime, lastconfirmed FROM cclog.finished_session WHERE maddr = '10.111.12.52' AND starttime < '2006-11-25 18:24:00' AND starttime > DATE_SUB('2006-11-25 18:24:00', INTERVAL 2 HOUR) AND endcause_id = 6;"
+  echo "* SELECT (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(repltime))  FROM cclog.replstatus;"
+  echo "* SELECT starttime, session_id, maddr, wcrpath FROM cclog.finished_session WHERE wcrpath LIKE \"i%\";"
+  echo "* to show indexing info: SHOW CREATE TABLE ccconf.wcrmap;"
+  echo "* to show recent applog errors: SELECT COUNT(*) FROM cclog.applog WHERE applogtype_id=5 AND logdate > '2007-06-05 14:30:00';"
+  echo "* to show recent applog errors with fu:  SELECT logdate, a.rep_id, r.name AS repname, location FROM cclog.applog a, ccconf.rep r WHERE applogtype_id=5 AND logdate > '2007-06-05 18:00:00' AND a.rep_id = r.rep_id order by logdate desc limit 50;"
+  echo "* to compare ACS errors: SELECT logdate, message FROM cclog.applog WHERE logdate > '2008-02-12 18:14:32' AND (message NOT LIKE '%deprecated%' AND message NOT LIKE '%pipe%' AND message NOT LIKE '%connection%' AND message NOT LIKE '%help%' AND message NOT LIKE '%disconnect%' AND message NOT LIKE '%impersonat%') AND applogtype_id NOT IN (4, 6);"
+  echo "* to have mysql figure out how much work it hAS to do: EXPLAIN blah blah"
+  echo "* convert name to rep_id: SELECT name, rep_id FROM ccconf.rep WHERE name LIKE \"%27127%\"; "
+  echo "* to list an agent's commits for today: SELECT rc.blocktime, rc.commit_room_schedule_id, name FROM cclog.rep_commits AS rc LEFT JOIN ccconf.commit_room_schedule USING(commit_room_schedule_id) LEFT JOIN ccconf.commit_room USING(commit_room_id) WHERE rep_id = 23013 AND rc.blocktime > '2006-07-16 00:00:00' AND rc.blocktime < '2006-07-16 23:59:59';"
+  echo "* to list all long calls: SELECT session_id, callcenter_id, maddr, campaign_id, rep_id, starttime, repstarttime, ((UNIX_TIMESTAMP() - UNIX_TIMESTAMP(starttime)) / 60) AS mins, endtime FROM ccroute.session WHERE starttime < date_sub(now(), interval 40 minute);"
+  echo "* to see if an agent uncommitted: SELECT blocktime, entrytime, state, conjugate_id FROM cclog.rep_commitlog WHERE blocktime > '2006-10-31 16:10:00' AND blocktime < '2006-11-01' AND rep_id=5460;"
+  echo "* to see if an agent is commited: SELECT * FROM cclog.rep_commits WHERE rep_id=28181 AND blocktime='2006-07-15 23:10:00';"
+  echo "* to make pretty, use \G instead of ;: SELECT *  FROM ccconf.rep WHERE rep_id = 27451\G"
+  echo "* to check if an agent is real - SELECT name FROM ccconf.rep WHERE rep_id = 6474;"
+  echo "* to find which cc an agent is FROM - SELECT name, callcenter_id FROM ccconf.rep WHERE rep_id = 27451;"
+  echo "    SELECT name FROM ccconf.callcenter WHERE callcenter_id = 10;"
+  echo "* SHOW columns IN rep;"
+  echo "* count columns IN a table:"
+  echo "*   SELECT COUNT(*) FROM rep;"
+  echo "* to find password of testagent for WSOL: ^?SELECT username, callcenter_id, password FROM ccconf.rep WHERE username = 'testagent' AND callcenter_id = 6;"
+  echo "* to start: service mysql start or su user, AND dbctl -c start"
+  echo "* to fix cardinality: ANALYZE TABLE ccconf.phut_store_phone;"
+  echo "* to show slave status: SHOW slave status\G"
+  echo "* to see how many calls were dropped FROM a crashed cmx: ^?SELECT session_id, maddr, campaign_id, rep_id, calllength, starttime, endtime, lastconfirmed FROM cclog.finished_session WHERE maddr = '10.111.12.52' AND starttime < '2006-11-25 18:24:00' AND starttime > DATE_SUB('2006-11-25 18:24:00', INTERVAL 2 HOUR) AND endcause_id = 6;"
+  echo "* SELECT (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(repltime))  FROM cclog.replstatus;"
+  echo "* SELECT starttime, session_id, maddr, wcrpath FROM cclog.finished_session WHERE wcrpath LIKE \"i%\";"
+  echo "* to show indexing info: SHOW CREATE TABLE ccconf.wcrmap;"
+  echo "* to show recent applog errors: SELECT COUNT(*) FROM cclog.applog WHERE applogtype_id=5 AND logdate > '2007-06-05 14:30:00';"
+  echo "* to show recent applog errors with fu: SELECT logdate, a.rep_id, r.name AS repname, location FROM cclog.applog a, ccconf.rep r WHERE applogtype_id=5 AND logdate > '2007-06-05 18:00:00' AND a.rep_id = r.rep_id order by logdate desc limit 50;"
+  echo "* to compare ACS errors: SELECT logdate, message FROM cclog.applog WHERE logdate > '2008-02-12 18:14:32' AND (message NOT LIKE '%deprecated%' AND message NOT LIKE '%pipe%' AND message NOT LIKE '%connection%' AND message NOT LIKE '%help%' AND message NOT LIKE '%disconnect%' AND message NOT LIKE '%impersonat%') AND applogtype_id NOT IN (4, 6);"
+  echo "* to look at errors: SHOW ENGINE INNODB STATUS\G"
+  echo "* to add uniqueness to your table"
+  echo "* ALTER TABLE scratch ADD UNIQUE (k);"
+  echo "* to compress a table"
+  echo "* ALTER IGNORE TABLE scratch ADD UNIQUE (k);"
+  echo "* DELETE FROM tablename WHERE columnname='somevalue'"
+  echo "* SELECT COUNT(DISTINCT columnname) FROM tablename;"
+  echo
+  echo "date +\"%s\""
+  echo
+  echo "For sqlite:"
+  echo ".table"
+  echo ".open filename.db"
+  echo ".mode column"
+  echo ".headers on"
+  echo ".show"
+  echo ".width 40 40"
+  echo "SELECT * FROM VennData ORDER BY EpochTime DESC LIMIT 10;"
+  echo "SELECT * FROM tablename;"
+  echo "SELECT name FROM sqlite_master WHERE type='table';"
+  echo "PRAGMA schema_version;"
+  echo "PRAGMA table_info(table_name)"
+  echo "
+DDL – Data Definition Language: CREATE, ALTER, DROP, TRUNCATE, COMMENT, RENAME
+DQL – Data Query Language: SELECT
+DML – Data Manipulation Language: INSERT, UPDATE, DELETE, LOCK, CALL, EXPLAIN
+DCL – Data Control Language: GRANT, REVOKE
+TCL – Transaction Control Language: COMMIT, ROLLBACK, SAVEPOINT
+"
+}
+
+function helpapp
+{
+  echo 'go to https://opel-perf.digitalthink.com/deploy/index.jsp for OPEL version'
+  echo 'AICC - https://aicc.digitalthink.com/aicc/DT_AICCAdapter'
+  echo 'JDS - /usr/local/dthink/etc/[stop|start]'
+  echo 'opel@techbeta - /usr/local/dtopel/bea/wlserver6.1/config/opeltbdomain/startWebLogic.sh'
+  echo 'presedia - login to mon3:8888, user admin, navigate to alert, user dthink, edit, refresh it'
+  echo 'UID: dthink-3001, dtopel-4001, dtlms-5001, dtlc-6001, dtplat-8001, l5ds-9001'
+  echo 'WL ports: LC- 6001, 6011(admin, LMS-7001, 7011(admin), OPEL-8001, 8011(admin), L5DS-9001, 9011(admin)'
+  echo 'WL PERF ports: LMS-7201, 7211(admin) OPEL-8201, 8211(admin)'
+  echo 'JDS labs: labs1/labs2; OPEL labs: labs3/labs4'
+  echo 'Discussion@SC5: bart/lisa'
+  echo 'to test Morgan Stanley: https://harness-qe.digitalthink.com/aicc/index.jsp -> AccountId=asdfasdf; Adapter URL=lms-techbeta.digitalthink.com/; UserId=asdf; CourseId=fc107; asdf for next 3 necessary fields; chose isNewUser; Edit HACP - > hack url to use https://morganstanleyklcontent.edcor.com/HACP.asp for stub for aicc_url value; submit'
+  echo 'or use this url:  http://lms-techbeta.digitalthink.com/aicc/DT_AICCAdapter?REQUEST_TYPE=launch_au&course_id=fc107&account_id=aicc_qe_marsh&aicc_url=https://morganstanleyklcontent.edcor.com/HACP.asp&aicc_sid=123rqwf&subdomain_id=&email='
+  echo 'to test lmsstub:1234/xpadmin_1/1/123456/0/12595'
+  echo 'for SNMP: snmpwalk -c public@lmsapp2 -v 1 cbeta-app1:7161 .1.3.6.1.4.1.140.625.190.1.45'
+  echo '  or: export CLASSPATH=~dtlms/bea/wlserver6.1/lib/weblogic.jar; ~dtlms/bea/jdk131/bin/java snmpwalk -c public@lmsapp1 -p 7161 localhost '
+  echo 'for docdist: change htaccess on staging, testing, lev-ban and lev-hyd: /usr/local/dthink/apache/bin/htpasswd /usr/local/dthink/apache/conf/passwordfile username'
+  echo 'for demo gallery: /usr/local/dthink/apache/conf/passwordfile and http://3rdparty.digitalthink.com/demogallery/index.html'
+  echo 'ClearCase web access: http://pong.digitalthink.com/ccweb/bin/ccweb'
+}
+
+function helpsysadmin
+{
+  echo 'openssl x509 -noout -text -in knowledge-cert.cer'
+  echo 'morpheus:/usr/openv/netbackup/bin/ ./xbp or xbpadm'
+  echo 'arthur cpconfig for lubbin'
+  echo 'DNS - rndc reload; sleep 5; tail -f /var/log/named.log'
+  echo 'toaster mounts - on vega/deneb/t2,t3-SAC:morpheus/t3,4-SC5:ne/t0-601, cd to /mnt/toasterN, edit etc/exports, on toasterN, exportfs to check current exports, exportfs -a to HUP mountd, then on mounting host mount, add line like this:'
+  echo '   toaster3:/vol/l5perf/opel-perf - /nfs/opel-perf nfs     -       yes     rw,hard,intr,bg'
+  echo 'pw admin on proactive to get console'
+  echo 'useradd -u 34940 -d /export/home/ubante -m -c "John Ubante" -s /usr/local/bin/bash ubante'
+  echo 'login to siteseer link provided in email, drill down to error'
+  echo 'AICC logging: on both mw7 and mw8 edit /usr/local/dtlms/bea/wlserver6.1/config/itgdomain/properties/lms/properties/lms-log4j.properties to set log level to debug then back to warn'
+  echo 'luxadm probe; luxadm display $pathanme{case-sensitive}'
+  echo 'mail1:/var/log/exim/mainlog'
+  echo 'to test DS3 from donner: while (true); do sleep 5; echo; echo; date; ~hlai/netperf_sol2.6/netperf -fM -l 900 -H mon2.back; done'
+  echo 'to do it the HTL way: /home/hlai/netperf_sol2.6/netperf -t TCP_STREAM -l 60 -H mon2.back -i 10,3 -I 99,5 -- -s 57344 -S 57344 -m 4096'
+  echo 'tw_cli /c0 show'
+}
+
+function helpnis
+{
+  echo 'for NIS: be root on polaris, go to /var/yp/flatfiles; edit passwd; cd security; vi passwd.adjunct using whatever passwd; cd ../../; make; passwd -r nis USERNAME; make; cd /mnt/netapp; mkdir USERNAME; chown USERID USERNAME; go to pong and su to USERNAME to confirm'
+}
+
+function helpwin
+{
+  echo '* to flush windows dns cache: ipconfig /flushdns'
+  echo '* net user username /domain'
+  echo '* net help'
+  echo '* alt-printscreen to get focused window'
+  echo '* to add user to ind-hyd-fil1, remote desktop to ind-hyd-fil1.corp, create a Uusername account, add to custom and catalog groups, edit passwd file, map win and unix users, make sure to Apply'
+  echo '* F5 to get a timestamp in notepad'
+  echo '* c:\WINDOWS\system32\drivers\etc\hosts'
+  echo ' route add 192.168.0.11 mask 255.255.255.255 192.168.0.2 metric 25'
+}
+
+function _helpperl
+{
+  echo "Poor perl has lost favor.  Here's a nifty sed command to do things inline in OSX:"
+  echo "* sed -i '' -e '178,\$d' afm-prod-newcage-internal "
+  echo "http://www.sunsite.ualberta.ca/Documentation/Misc/perl-5.6.1/pod/perlfunc.html"
+  echo '* export PERL5LIB="/home/ubante/cc/apps/callcenter/lib"'
+  echo "* -e = use this instead of input script"
+  echo "* -n = enclose this in a while <>"
+  echo "* -i = buffer STDOUT then write to input script"
+  echo "* -p = enclose this in a while <> continue print"
+  echo "* -a = awk stype - puts things in @F"
+  echo "* -l = trails output with a newline and chops input"
+  echo "* instead of dos2unix: perl -pi -e \"s/.$//\" fu.java"
+  echo "* from http://okaye.esmartweb.com/perl.html:"
+  echo "To convert a string to DES:"
+  echo "perl -e \"print crypt('putstringhere','random2charstring')\""
+  echo "To pretend to be grep:"
+  echo "  cat fu | perl -n -e '/(b3105[\d]*)/ && print $1'"
+  echo "To print the date in Julian seconds:"
+  echo "  perl -e 'use Time::Local; print timelocal(localtime)' ;"
+  echo "To convert Julian seconds to human time:"
+  echo "  perl -e 'use Time::Local; print scalar localtime(1164852823)'; echo"
+  echo "To print the date 3 hours ago:"
+  echo "  perl -e 'use Time::Local; print scalar localtime(timelocal(localtime) - (3*60*60))'"
+  echo "To move a file's date back 3 hours:"
+  echo "  touch -t \`perl -e 'use Time::Local; @a=(localtime(timelocal(localtime) - (3*60*60)))[4,3,2,1]; print \"0\", @a'\` filename"
+  echo "To skip lines to print:"
+  echo "  cat nums | perl -ne 'print unless ($.%10)'"
+  echo "or:"
+  echo "  cat nums | sed -n '0~1000p'"
+  echo "To count chars in ever line of filename:"
+  echo "  perl -lpe '$_=length' filename"
+  echo "Print a random line from a file (explanations):"
+  echo "  perl -e'rand$.<1and$q=$_ while<>print$q' "
+  echo "Print the lines of the input file in random order (explanations):"
+  echo "  perl -e'@l=<>;@l[$i,$s]=@l[$s=rand$i,$i]while++$i<@l;print@l' "
+  echo "Reverse the order of the lines but not the text order inside each line (explanations):"
+  echo "  perl -e'print reverse<>' "
+  echo "Reverse the text order inside each line but not the order of the lines (explanations):"
+  echo "  perl -lne'print scalar reverse \$_' "
+  echo "Reverse both the order of the lines and the text order inside each line (explanations):"
+  echo "  perl -e'print scalar reverse<>'" 
+  echo "Reverse the order of the paragraphs in the text (explanations):"
+  echo "  perl -00e'print reverse<>' "
+  echo "Print the length of each line in the input file (explanations):"
+  echo "  perl -lpe'$_=length' "
+  echo "Uppercase the entire input file:"
+  echo "  perl -ne'print uc'" 
+  echo "Lowercase the entire input file:"
+  echo "  perl -ne'print lc' "
+  echo "Print the odd-numbered lines (1, 3, 5, etc. ; explanations):"
+  echo "  perl -pe'<>' "
+  echo "Print the even-numbered lines (2, 4, 6, etc. ; explanations):"
+  echo "  perl -pe'$_=<>'" 
+  echo "Find the number less than a value, in this case 21"
+  echo '  perl -ne '\''/(\d*)/ && ($1<21) && print "$1\n"'\'
+  echo "Symbols:"
+  echo "  ||= assigns if already false"
+  echo "  \w \d \s word, digit, space" 
+  echo "Regex:"
+  echo "  ? = 0 | 1"
+  echo "  * = 0 | any"
+  echo "  + = 1 | any"
+  echo "Ternary operator: if the first is true, return the second, else the third"
+  echo "  \$min = (\$a < \$b ? \$a : \$b );"
+  echo "Declaring:"
+  echo "  $scalar = 'fu'"
+  echo "  @list = (1,2,3,4)"
+  echo "  %hash = ('a' => 1, 'b' => 2)"
+  echo "  $array_ref = [1,2,3,4] or = [ @list ]"
+  echo "  $hash_ref = {'a' => 1, 'b' => 2}"
+  echo "  $list[3] = 'fourth element'"
+  echo " * special variables: http://www.perlmonks.org/?node_id=353259"
+  echo ' blah blah | perl -ane " print @F[1]"'
+  echo " * random number:"
+  echo "perl -e '\$num1 = 10e14 * rand(); \$num2 = 10e13 * rand(); print \$num1 + \$num2 . \"\n\"'"
+  echo " * for loop:"
+  echo "perl -e 'for ( =0;  < 10; ++ ) { print  . $/ } '"
+  echo " * to stop buffering suffering:"
+  echo "select((select(LOG), $|=1)[0]); "
+  echo " * to print the Perl path:"
+  echo 'perl -e "print qq(@INC).$/"'
+}
+
+function helpperl {
+  helpPerl
+}
+
+function helpPerl { 
+  _helpperl | less
+}
+
+function helpGo {
+  less ~/.startup/helpGo.txt
+}
+
+function helpPython {
+  less ~/.startup/helpPython.txt
+}
+
+function helpJava
+{
+  less ~/.startup/helpJava.txt
+}
+
+function helpGloss
+{
+  less ~/.startup/helpGloss.txt
+}
+
+function helpMetric
+{
+  less ~/.startup/helpMetricSystem.txt
+}
+
+function helpKubernetes
+{
+  less ~/.startup/helpKubernetes.txt
+}
+
+function helpnewhost
+{
+  echo "* to check when a host was last jumpstarted: ls -l /root/install.log"
+  echo "* for new hosts, mkdir logs .ssh bin; ln -s .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin"
+  echo "- then NEWHOSTNAME=--newhostname--"
+  echo "ssh \$NEWHOSTNAME 'mkdir logs .ssh bin; ln -s .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin'"
+  echo "sleep 2"
+  echo "scp $HOME/.ssh/id_dsa.pub ubante@\$NEWHOSTNAME:.ssh/authorized_keys"
+  echo "sleep 2"
+  echo "scp $HOME/working/spewing/rsync-sparc ubante@\$NEWHOSTNAME:bin/rsync"
+  echo "cd ; scp -r .startup \$NEWHOSTNAME:"
+  echo "spewtohost \$NEWHOSTNAME"
+  echo "* for new hosts: for i in HOSTNAME1 HOSTNAME2; do rof;  ssh -l ubante \$i \"mkdir logs .ssh; ln -s .startup/bash_global .bashrc; echo exec\ bash > .profile\"; scp /export/home/ubante/.ssh/id_dsa.pub ubante@\$i:.ssh/authorized_keys2;  done"
+}
+
+function helpme
+{
+  echo '* To get scrollbar: CTL-Middle; to get kill: CTL-Right'
+  echo '* To find bad memory errors in dmesg:  egrep "AFT|AFSR|Fault_PC|state_5"'
+  echo "* To truss: truss -f -p PID"
+  echo "* This will add up a column: count 1 10 | awk '{t+=$1} END {print t}'"
+  echo "* This lists the branches in a vob: ct lstype -kind brtype"
+  echo "* To create a db: create database dbName"
+  echo "* To reset term: tput init"
+  echo "* For host.conf changes: edit in personal view, deliver, finish-deliver, /vobs/cci_utils/tools/sbin/push -rmprivate -prod stampy, host-conf-builder.pl"
+  echo "* to remove a view: ct rmview -tag VIEW_NAME"
+  echo "* to convert from hex to bin: bc | ibase=16 | obase=2 | hexval "
+  echo "* Primary pagers in active use:"
+  echo "- 415-303-0250 App 2-way"
+  echo "- 877-736-4405 Inf 2-way"
+  echo "- 877-473-6505 DBA 1-way"
+}
+
+function helptunnel
+{
+  echo "From X to Z, using Y as a proxy:"
+  echo " X: ssh -L 8000:localhost:8000 Y"
+  echo " Y: ssh -L 8000:localhost:22 Z"
+  echo " X: ssh -p 8000 localhost COMMAND"
+}
+
+function helpconsole
+{
+  echo "to connect to ac200 from a 280R: serialB - tip - db25 (normal) - straight thru ethernet - LOM"
+  echo "to connect to a ac200 from intel: serial - [hyperterm|tip com1] - db9 (normal) - flat cable - LOM"
+  echo "to connect to a ultra 2 from a e250: serialB - tip - db25 (normal) - flat cable - db25 (normal) - serialA"
+  echo "to connect between t1-105s: serialb - flat cable - LOM"
+  echo "to connect to the iDSU from intel: serial - Kentrox DB9-RJ45 adaptor - straight thru - DCE"
+  echo "to use LO's, go to mgr1-[sfi|da1] and console <hostname>.  exit is ctrl-e ctrl-c period"
+  echo "to use rackable in peak space: [josb@dev7-pai lw2]$ ~/ops/config/lw2/scripts/lw-roamer-console chat15-sfi"
+}
+
+function helpvi
+{
+  echo 'to sort 10 lines: go to start line - 10!!sort'
+}
+
+function helpbrowser
+{
+  echo 'javascript:alert(document.cookie) -> display js errors'
+}
+
+function helpstaging
+{
+  echo '/usr/local/apache/bin/add_ht_user.sh'
+  echo 'http://l5-staging:1234'
+}
+
+function getAddress
+{
+  getaddress
+}
+
+function temp
+{
+  if [ -d ~/tmp ]; then
+    cd ~/tmp
+    pwd
+  else
+    echo "WARNING: no ~/tmp directory"
+    echo "making ~/tmp directory"
+    mkdir ~/tmp
+    cd ~/tmp
+    echo -n "now in ~/tmp directory:"
+    pwd
+  fi
+}
+
+function work
+{
+  if [ -d ~/working ]; then
+    cd ~/working
+    llt
+  else
+    echo "WARNING: no ~/working directory"
+    echo "making ~/working directory"
+    mkdir ~/working
+    cd ~/working
+    echo -n "now in ~/working directory:"
+    pwd
+  fi
+}
+
+function logs
+{
+  if [ -d ~/logs ]; then
+    cd ~/logs
+    pwd
+  else
+    echo "WARNING: no ~/logs directory"
+    echo "making ~/logs directory"
+    mkdir ~/logs
+    cd ~/logs
+    echo -n "now in ~/logs directory:"
+    pwd
+  fi
+}
+
+function bin
+{
+  if [ -d ~/bin ]; then
+    cd ~/bin
+    pwd
+  else
+    echo "WARNING: no ~/bin directory"
+    echo "making ~/bin directory"
+    mkdir ~/bin
+    cd ~/bin
+    echo -n "now in ~/bin directory:"
+    pwd
+  fi
+}
+
+function back
+{
+  local DATE=`date '+%Y-%m-%d_%H-%M-%S'`
+  local FILE=$1
+  local BACKUPSDIR="$HOME/backups"
+
+  if [ ! -d $BACKUPSDIR ]; then
+    echo "WARING: no $BACKUPSDIR directory"
+    echo "making $BACKUPSDIR directory"
+    mkdir $BACKUPSDIR
+  fi
+
+  echo -n "copying $FILE to $BACKUPSDIR/$FILE\.$DATE...  "
+  cp $FILE $BACKUPSDIR/$FILE\.$DATE  
+  echo "done:"
+  ls -l $BACKUPSDIR | tail -2
+
+}
+
+function checkconf
+{
+  local TEMPFILE=/tmp/checkconf.tmp$$
+  local TEMPSYMLINK=/tmp/checkconf
+  echo "... using $CCI_HOME and $APP_HOME"
+  echo
+  local GC=$CCI_HOME/conf/global.conf
+  local AC=$APP_HOME/conf/app.conf
+  local HC=/prod/ssp/conf/host.conf
+  local VC=$APP_HOME/conf/view.conf
+  echo
+
+  > $TEMPFILE
+  echo "# -------- $GC --------" >> $TEMPFILE
+  cd `dirname $GC`
+  grep . /dev/null `basename $GC` >> $TEMPFILE
+  echo "# -------- $AC --------" >> $TEMPFILE
+  cd `dirname $AC`
+  grep . /dev/null `basename $AC` >> $TEMPFILE
+  echo "# -------- $HC --------" >> $TEMPFILE
+  cd `dirname $HC`
+  grep . /dev/null `basename $HC` >> $TEMPFILE
+  echo "# -------- $VC --------" >> $TEMPFILE
+  cd `dirname $VC`
+  grep . /dev/null `basename $VC` >> $TEMPFILE
+
+  echo -n "global.conf: "
+  ls -l $GC
+  echo -n "app.conf:    "
+  ls -l $AC
+  echo -n "host.conf:   "
+  ls -l $HC
+  echo -n "view.conf:   "
+  ls -l $VC
+
+  rm $TEMPSYMLINK
+  ln -s $TEMPFILE $TEMPSYMLINK
+  echo "The total file is at $TEMPFILE"
+}
+
+function findclobbering
+{
+  local checkconffile=$1
+  local out=/tmp/findclobbering$$
+  local outsymlink=/tmp/findclobbering
+  
+  ( for i in `grep host.conf $checkconffile | grep \=\  | perl -pi -e "s|host.conf:||" | grep -v ^#  | awk ' { print $1 } ' | sort -u | grep -v =`; do rof; grep $i $checkconffile; done ) > $out
+
+  rm $outsymlink
+  ln -s $out $outsymlink
+  echo "check out $outsymlinik"
+
+}
+
+function trns
+{
+  str=$@
+  echo $str | tr "\n" " "
+}
+
+function trns
+{
+  str=$@
+  echo $str | tr "\n" ","
+}
+
+function trsn 
+{
+  str=$@ 
+  echo $str | tr " " "\n"
+}
+
+function trcn
+{
+  str=$@
+  echo $str | tr ":" "\n"
+}
+
+function expandJavaInvocation
+{
+  string=$1
+  fullps=`/usr/ucb/ps -auxww | grep java | grep $1`
+  echo $fullps | tr " " "\n" | tr ":" "\n"
+}
+
+function ghetcho
+{
+  for i in `count 1 $1`;
+  do
+    echo
+  done
+}
+
+function blankps1
+{
+        PS1='> '
+} 
+
+function blankps2
+{
+  export PS1='$(date +%H%M)-\u@\h\[\033[0m\]:\[\033[1;32m\]\W\$ \[\033[0m\]'
+}
+
+function wierdname
+{
+  local freak=$1
+  find . -inum `find . -maxdepth 1 -name \*zz\* -ls | awk ' { print $1 } '` -exec ls -l {} \;
+  echo "find . -inum `find . -maxdepth 1 -name \*zz\* -ls | awk ' { print $1 } '` -exec ls -l {} \;"
+}
+
+function checkmetasync
+{
+  while (true); do echo ; echo "------------------------------------------" ; date ;metastat | egrep "Mirror|prog"; sleep 30; done
+}
+
+function checkmetastat
+{
+  metastat | grep State | egrep -v "Okay|Device"
+}
+
+function revhost
+{
+# this function is best used to find out a DNS name is a CNAME
+# so if you're wondering who's hosting chupacabra.com
+# you can host chupacabrarulez.com and get an IP
+# but if then type rev!! you find out that the DNS name is a CNAME
+# to www.informacion.com 
+
+  HOST=$1
+
+  HOSTIP=`host $HOST | grep address | awk ' { print $4 } '`
+  echo "$HOST has IP of $HOSTIP"
+  REVHOST=`host $HOSTIP`
+  echo "reversing gets $REVHOST"
+}
+
+ 
+function getProperties
+{
+  cd ~/domain/properties
+  filelist=`find . -type f -name \*properties`
+  for i in $filelist;
+  do
+    echo "# fromfilename $i"
+    cat $i  
+  done   
+}           
+
+function getProperty
+{
+  showproperties | egrep "fromfilename|$1"
+}
+ 
+function getMfaVersionsForLmsCluster
+{
+  local HERE=$PWD
+  local DOMAINHOME="/nfs/lms/lmsdomain"
+  if [ $1 ]; then
+    DOMAINHOME=$1;
+  fi
+  if [ ! -r $DOMAINHOME ]; then
+    echo "$DOMAINHOME is not readable; exiting."
+    return 1
+  fi
+
+  echo "using this domain home: $DOMAINHOME"
+  APPHOME=$DOMAINHOME/applications
+  AICCFILE=$APPHOME/aicc/META-INF/MANIFEST.MF
+  ASTFILE=$APPHOME/ast.war
+  BEFILE=$APPHOME/be_aicc.ear
+  CISCOFILE=$APPHOME/cisco.ear
+  EDSFILE=$APPHOME/adapters/com/digitalthink/eds/eds.ver
+  EGPFILE=$APPHOME/egp.war
+  LMSFILE=$APPHOME/lms/META-INF/MANIFEST.MF
+  PLSFILE=$APPHOME/pls.ear
+  TEMPDIR=/tmp/listing$$
+  mkdir $TEMPDIR
+  cd $TEMPDIR
+
+  echo -n "-- AICC: " 
+  if [ -r $AICCFILE ]
+  then
+    grep AICC-Version $AICCFILE
+  else
+    echo "can't find $AICCFILE"
+  fi
+  echo -n "-- AST: " 
+  if [ -r $ASTFILE ]
+  then
+    jar xf $ASTFILE META-INF/MANIFEST.MF
+    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-ast
+    grep AST-Version $TEMPDIR/META-INF/MANIFEST.MF-ast
+  else
+    echo "can't find $ASTFILE"
+  fi
+  echo -n "-- BE: " 
+  if [ -r $BEFILE ]
+  then
+    jar xf $BEFILE META-INF/MANIFEST.MF
+    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-be
+    grep BE_AICC-Version $TEMPDIR/META-INF/MANIFEST.MF-be
+  else
+    echo "can't find $BEFILE"
+  fi
+  echo -n "-- CISCO: " 
+  if [ -r $CISCOFILE ]
+  then
+    jar xf $CISCOFILE META-INF/MANIFEST.MF
+    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-cisco
+    grep Cisco-Version $TEMPDIR/META-INF/MANIFEST.MF-cisco
+  else
+    echo "can't find $CISCOFILE"
+  fi
+  echo -n "-- EDS: "
+  if [ -r $EDSFILE ]
+  then
+    grep EDS-Version $EDSFILE
+  else
+    echo "can't find $EDSFILE"
+  fi
+  echo -n "-- EGP: " 
+  if [ -r $EGPFILE ]
+  then
+    jar xf $EGPFILE META-INF/MANIFEST.MF
+    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-egp
+    grep EGP-Version $TEMPDIR/META-INF/MANIFEST.MF-egp 
+  else
+    echo "can't find $EDSFILE"
+  fi
+  echo -n "-- LMS: "
+  if [ -r $LMSFILE ]
+  then
+    grep Lms-Version $LMSFILE
+  else
+    echo "can't find $LMSFILE"
+  fi
+  echo -n "-- PLS: " 
+  if [ -r $PLSFILE ]
+  then
+    jar xf $PLSFILE META-INF/MANIFEST.MF
+    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-pls
+    grep Pls-Version $TEMPDIR/META-INF/MANIFEST.MF-pls ; echo "CURRENTLY BROKE"
+  else
+    echo "can't find $PLSFILE"
+  fi
+
+  cd $HERE
+  rm -rf $TEMPDIR
+}
+
+function getMfaVersionsForLcCluster
+{
+  local HERE=$PWD
+  local DOMAINHOME="/nfs/lc/lcdomain"
+  if [ $1 ]; then
+    DOMAINHOME=$1;
+  fi
+  if [ ! -r $DOMAINHOME ]; then
+    echo "$DOMAINHOME is not readable; exiting."
+    return 1
+  fi
+
+  echo "using this domain home: $DOMAINHOME"
+  APPHOME=$DOMAINHOME/applications
+  TEMPDIR=/tmp/listing$$
+  mkdir $TEMPDIR
+  cd $TEMPDIR
+
+  echo -n "-- LC: "
+  grep LC-Version $APPHOME/lc/META-INF/MANIFEST.MF
+  echo -n "-- PLS: "
+  jar xf $APPHOME/pls.ear META-INF/MANIFEST.MF
+  mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-pls
+  grep Pls-Version $TEMPDIR/META-INF/MANIFEST.MF-pls ; echo "CURRENTLY BROKE"
+
+  cd $HERE
+  rm -rf $TEMPDIR
+}
+
+function getMfaVersionsForLcClusterForVersionMatrix
+{
+  local HERE=$PWD
+  local DOMAINHOME="/nfs/lc/lcdomain"
+  echo "using this domain home: $DOMAINHOME"
+  local APPHOME=$DOMAINHOME/applications
+  local TEMPDIR=/tmp/listing$$
+  mkdir $TEMPDIR
+  cd $TEMPDIR
+
+  echo -n "-- LC: "
+  grep LC-Version $APPHOME/lc/META-INF/MANIFEST.MF
+  echo -n "-- PLS: "
+  jar xf $APPHOME/pls.ear META-INF/MANIFEST.MF
+  mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-pls
+  grep Pls-Version $TEMPDIR/META-INF/MANIFEST.MF-pls ; echo "CURRENTLY BROKE"
+
+  cd $HERE
+  rm -rf $TEMPDIR
+}
+
+function getMfaVersionsForOpelCluster
+{
+  local HERE=$PWD
+  local DOMAINHOME="/nfs/opel/opeldomain"
+  if [ $1 ]; then
+    DOMAINHOME=$1;
+  fi
+  if [ ! -r $DOMAINHOME ]; then
+    echo "$DOMAINHOME is not readable; exiting."
+    return 1
+  fi
+
+  echo "using this domain home: $DOMAINHOME"
+  APPHOME=$DOMAINHOME/applications
+  TEMPDIR=/tmp/listing$$
+  mkdir $TEMPDIR
+  cd $TEMPDIR
+
+  echo -n "-- Opel: "
+  grep Opel-Version $APPHOME/opel/META-INF/MANIFEST.MF
+
+  cd $HERE
+  rm -rf $TEMPDIR
+}
+
+function getMfaVersionsForOpelClusterForVersionMatrix
+{
+  local HERE=$PWD
+  local DOMAINHOME="/nfs/opel/opeldomain"
+  if [ $1 ]; then
+    DOMAINHOME=$1;
+  fi
+  if [ ! -r $DOMAINHOME ]; then
+    echo "$DOMAINHOME is not readable; exiting."
+    return 1
+  fi
+
+  echo "using this domain home: $DOMAINHOME"
+  APPHOME=$DOMAINHOME/applications
+  TEMPDIR=/tmp/listing$$
+  mkdir $TEMPDIR
+  cd $TEMPDIR
+
+  TITLELINE="    Opel    "
+  VERSIONLINE=`grep Opel-Version $APPHOME/opel/META-INF/MANIFEST.MF | awk ' { print $2 } '`
+  echo $TITLELINE
+  echo $VERSIONLINE
+
+  cd $HERE
+  rm -rf $TEMPDIR
+}
+
+function getMfaVersionsForDsCluster
+{
+  HERE=$PWD
+  DOMAINHOME="/usr/local/l5ds/bea/wlserver6.1/config/l5dsdomain" # for techbeta
+  echo "using this domain home: $DOMAINHOME"
+  APPHOME=$DOMAINHOME/applications
+  TEMPDIR=/tmp/listing$$
+  mkdir $TEMPDIR
+  cd $TEMPDIR
+
+  echo -n "-- Ds: "
+  grep L5DS-Version $APPHOME/l5ds/META-INF/MANIFEST.MF
+
+  cd $HERE
+  rm -rf $TEMPDIR
+}
+
+function getMfaVersionsForAllClusters
+{
+  listMfaVersionsForLmsCluster
+  listMfaVersionsForLcCluster
+  listMfaVersionsForOpelCluster
+  listMfaVersionsForDsCluster
+}
+
+function grepApacheConf
+{
+  local HERE=`pwd`
+  cd ~/tmp
+  ps -ef | grep http | grep root | cut -f2 -d\? | awk ' { print $2 } ' > apaches$$
+  for i in `cat apaches$$`
+  do
+    BASE1=`dirname $i`
+    BASE2=`dirname $BASE1`
+    echo "-- $BASE2/conf/httpd.conf -- "
+    grep -i $1 $BASE2/conf/httpd.conf | grep -v \# 
+    echo
+    echo
+  done
+  cd $HERE
+}
+
+function findApacheConf
+{
+  local TEMPFILE=/tmp/apaches$USER$$
+  ps -ef | grep http | grep root | cut -f2 -d\? | awk ' { print $2 } ' > $TEMPFILE
+  for i in `cat $TEMPFILE`
+  do
+    BASE1=`dirname $i`
+    BASE2=`dirname $BASE1`
+    echo $BASE2/conf/httpd.conf
+  done
+}  
+  
+function findOracleConnections
+{
+  #netstat -a | grep 152[12]| grep ESTAB | awk '{ print $2 }' | cut -f1 -d\. | grep -v \* > /tmp/$USER$$
+  netstat -a | awk ' $1~/152[123]/ && $7~/ESTAB/ { print $2 }' | cut -f1 -d\. | grep -v \* > /tmp/$USER$$
+  local s=0
+  for i in `sort -u /tmp/$USER$$`
+  do
+    echo -n "$i: "
+    c=`grep -c $i /tmp/$USER$$`
+    echo $c
+    s=`expr $s + $c`
+  done
+  echo "-------------"
+  echo "total $s" 
+
+}
+
+function jgrep
+{
+  find . -type f -name \*java -exec grep $1 {} /dev/null \;
+  echo "searched `find . -type f -name \*java | wc -l` files"
+}
+
+function jspgrep
+{
+  find . -type f -name \*jsp -exec grep $1 {} /dev/null \;
+  echo "searched `find . -type f -name \*jsp | wc -l` files"
+}
+
+function validateClasspath
+{
+  local TEMPFILE=/tmp/classpath$$
+
+  /usr/ucb/ps auxww | grep java | egrep -v "root|admin" | tr " " "\n" | grep domain| tr ":" "\n" | grep -v "\-Djava" > $TEMPFILE
+  for file in `cat $TEMPFILE`
+  do
+    if [ -r $file ]; then
+      echo "yes $file"
+    else
+      echo "no  $file"
+    fi
+  done
+
+  rm $TEMPFILE
+}
+
+function validateClasspath2
+{
+  local TEMPFILE=/tmp/classpath$$
+
+  /usr/ucb/ps auxww | grep java | egrep -v "root|admin" | tr " " "\n" | grep weblogic.jar | tr ":" "\n" | grep -v "\-D java" > $TEMPFILE
+  for file in `cat $TEMPFILE`
+  do
+    if [ -r $file ]; then
+      echo "yes $file"
+    else
+      echo "no  $file"
+    fi
+  done
+
+  rm $TEMPFILE
+}
+
+function isTargetted
+{
+  concatConfigXML $1 | egrep "JMSConnection|EJBComponent|JDBCConnectionPool|JDBCTxDataSource|JDBCDataSource|WebAppComponent|MailSession|JMSServer" | grep -v Target
+}
+
+function isDeployed
+{
+  concatConfigXML $1 | grep \<Application\  | grep -v Deployed
+}
+
+function compareConfigXmls
+{
+  concatConfigXML $1 > /tmp/A1$$ 
+  concatConfigXML $2 > /tmp/A2$$ 
+  diff /tmp/A1$$ /tmp/A2$$ 
+  rm /tmp/A1$$ /tmp/A2$$ 
+}
+
+function countLogByMinute
+{
+  local STRING=$1
+  local LOGFILE=$2
+  local PREFACESTRING=$3
+  local ENDHOUR=$4
+
+  for i in `countpadded 0 $ENDHOUR`
+  do
+    for j in `countpadded 0 59`
+    do
+      echo -n $i:$j\ \ \ 
+      grep -c "$PREFACESTRING$i:$j" $LOGFILE;
+    done
+  done
+}
+
+function findStringInConfigXmlFilesFromAllTheDomains
+{
+  local STRING=$1
+  local HERE=$PWD
+
+  cd /export/configxmls
+  for i in *domain; do rof; concatConfigXML $i | grep -i $STRING; done
+  cd $HERE
+}
+
+function refreshConfigXmls
+{
+  CONFIG_HOME=/export/configxmls
+  cd $CONFIG_HOME
+  for i in `ls -l | grep -v total | awk -F\> ' { print $2 } '`
+  do
+    echo "-- $i --"
+    cd `dirname $i`
+    getdiff config.xml
+    cd $CONFIG_HOME
+  done
+}
+
+function timeStartup
+{
+  egrep "Production\ Mo|Starting\ WebLogic\ Server" $1 | tail -2
+}
+
+function getLanguages
+{
+  echo "de rien / merci beaucoup / Bonjour / Au Revoir"
+  echo "tatalu - bye"
+  echo "hey bhagwan - oh god"
+  echo "offodi - aha"
+  echo "goonda - Durga"
+  echo "aur boliye / accha"
+  echo "cho chaad - so sad"
+  echo "takloo - bald"
+}
+
+function jkill
+{
+  local STRING=$1
+  kill `ps -ef | grep jav[a] | grep $1 | awk ' { print $2 }'`
+}
+
+function comparePasswdShadow
+{
+  local PASSWD=/etc/passwd
+  local SHADOW=/etc/shadow
+  local HERE=`pwd`
+  local TEMPDIR=/tmp
+
+  if [ $UID -ne 0 ]; then
+    echo "You need to be root to run this function."
+    return 0
+  fi
+  if [ ! x$1 == x ]; then
+    PASSWD=$1
+  fi
+  if [ ! x$2 == x ]; then
+    SHADOW=$2
+  fi
+
+  cut -f1 -d: $PASSWD | sort > $TEMPDIR/a
+  cut -f1 -d: $SHADOW | sort > $TEMPDIR/b
+
+  echo "unique to PASSWD:"
+  for i in `diff $TEMPDIR/a $TEMPDIR/b | grep \< | cut -f2 -d\  `
+  do 
+    grep "^$i:" $PASSWD
+  done
+  echo
+  echo "unique to SHADOW:"
+  for i in `diff $TEMPDIR/a $TEMPDIR/b | grep \> | cut -f2 -d\  `
+  do
+    grep "^$i:" $SHADOW
+  done
+  echo
+
+  cd $TEMPDIR
+  rm a b
+  cd $HERE
+}
+
+function treecp {
+    if [ "${#}" != 2 ] ; then
+        echo "Usage: treecp source destination";
+        return 1;
+    else
+        tar cf - "${1}" | (cd "${2}" ; tar xpf -) ; 
+    fi ;
+};
+
+function checkTerminalSize {
+  local width=`tput cols`;
+
+  if [ "$width" -lt 70 ]; then
+    echo "Error: your terminal width is only $width"
+    return 1
+  fi
+
+  echo "width - $width"
+}
+
+function tailForErrors {
+  tail -f $1 | egrep -i "GC|exception|error|warn|production"
+}
+
+function tailF {
+  tail -f $1 | egrep -i "GC|exception|error|warn|production"
+}
+
+function grepForErrors {
+  egrep -i "exception|error|warn|production" $1 | less
+}
+
+function makeWikiPropertiesPage {
+  # I suggest this on the remote host:
+  # cd `pwd -P`; makeWikiPropertiesPage `find $PWD -type f -name \*properties\*`
+  # Then this on pi:
+  # makeWikiHeader http://pi.corp.digitalthink.com/twiki/bin/view/Main/ReleaseL5252Details | grep -v nfs_
+  domain=`echo $PWD | cut -f4 -d\/`
+  for i in $@
+  do
+    filename=`basename $i`
+    f_converted=`echo $filename | tr "." "_"`
+    echo "<a name=\"${domain}_${f_converted}\"/>"
+    echo "---++++ $i"
+    echo "<pre>"
+    cat $i
+    echo "</pre>"
+  done
+}
+
+function pingPager {
+  mail 4153030336@archwireless.net
+}
+
+function extractFileFromTarball {
+  TARBALL=$1
+  FILE=$2
+  HERE=$PWD
+  TEMPDIR="/tmp"
+ 
+  cd $TEMPDIR
+  tar xf $HERE/$TARBALL $FILE
+  echo "extracted to $TEMPDIR/$FILE"
+  cd $HERE
+}
+
+function tailFF {
+  files=$@
+
+  echo "tailing $@"
+  for i in $files;
+  do
+    tail -f $i | egrep -i "GC|exception|error|warn|production" &
+  done
+}
+
+function rcfinddetailed {
+  string=$1
+
+  for file in `find -L ~/.startup -type f -exec grep -iHc $string {} \; | egrep -v "\.git|RCS|elisp|:0" | cut -f1 -d:`
+  do
+    echo "-------------------------------------------------";
+    echo $file:
+    echo -n "function"
+    perl -e"
+  $/ = 'function';
+  open IN, shift;
+  while ( <IN> ) { if ( m/$string/i ) { print } }" $file | grep -v "function$";
+
+    echo
+  done
+  
+}
+
+function getRandomFile () {
+  RANDOM=`getRandomNumber`;
+  randomfile=~/tmp/tempfile$RANDOM;
+  if [ ! -d ~/tmp ]; then
+    echo "WARNING: no ~/tmp directory";
+    echo "making ~/tmp directory";
+    mkdir ~/tmp;
+  fi;
+  rm -f $randomfile;
+  rm -f .tempfile$i.swp;
+  touch $randomfile;
+
+  echo $randomfile
+} 
+
+function vitemp {
+  vitemp=`getRandomFile`
+  vim $vitemp
+  ls -l $vitemp
+}
+
+function cdtempdir {
+  RANDOM=`getRandomNumber`
+  tempdir=~/tmp/tempdir$RANDOM
+
+  rm -f $tempdir
+  mkdir -p $tempdir
+  cd $tempdir
+  pwd
+}
+
+function sshl {
+  SERVERLIST=$1
+  shift
+  HOSTLISTFILE=$HOME/working/hosts/hostswithaccounts
+
+  for i in `cut -f1 -d, $HOSTLISTFILE | grep $SERVERLIST`;
+  do
+    echo -- $i --;
+    s $i $@  
+  done
+}
+
+function killLongCall {
+  echo -n "EVENT:session="
+  echo -n $1
+  echo ";name=docmd;cmd=disconnect;reason=supervisor"
+}
+
+function grepPhutStore {
+  grep $1 ~/working/recycling/phut_stores
+}
+
+function getShipitDate {
+  date +%Y-%m-%d\ %H:%M:%S\ PDT
+}
+
+function getHostnamesFromHostsWithAccounts {
+  cut -f1 -d, $HOME/working/hosts/hostswithaccounts | grep -v \#
+}
+
+function f2 {
+  grep $1 /etc/passwd
+}
+
+function helpLO {
+  echo "* for emacs: M-x shell, M-x rename-buffer, C-x b"
+  echo "* [18:12] johnrgm: cm_minutely already found those calls (the message is a little badly worded but it mean that cm_minutely asked the callmanager if this call still exists. If the answer is no, then cm_minutely cleans up and closes off off the calls. The next pass of cm_minutely now sees them as ended, so it moves them to finished_session."
+  echo "* to create new mailman lists: lists://usr/local/mailman/bin/newlist -h"
+  echo "* to check on a callmanager:"
+  echo "  egrep ' ERR | CRI ' /var/cc/log/ms.log /var/cc/log/cm.log; cat /var/cc/log/cm-stderr.log"
+  echo "  you can ignore 'INFO failed' and 'ClientWriteThread' unless there are a lot"
+  echo "* this bit will get you to a decent LTool starting point"
+  echo " https://callcenter.liveops.com/html/source.mpl?zmoac"
+  echo "* this writes to the now defunct tunnel_lag.log:"
+  echo "tail --verbose -F /var/cc/log/mt.log | perl show_tunnel_delay.pl | perl bucket_lag.pl >tunnel_lag.log"
+  echo "* make cm.log readable"
+  echo "tail -f /var/cc/log/cm.log | /cc/ops/scripts/cfilter.pl -t -d -s"
+  echo "* to see HTTP return codes:"
+  echo "tail -f \`ls -rt /usr/local/apache/logs/ssl_request* | tail -1\` | perl -n -e '/1.1\\\" ([\d]+) / && print \"\$1 \$_\n\"'"
+  echo "* other apache greps:"
+  echo 'tail -f `ls -rt /usr/local/apache/logs/ssl_engine_log.* | tail -1` | egrep -v "Connection|Initial|Seeding"'
+  echo 'tail -f `ls -rt /usr/local/apache/logs/access_log* | tail -1` | egrep -v "mystate|server-status|version|check_http|10.111.2.5|10.111.2.6"'
+  echo "* SV: 63.215.194.235"
+  echo "* SF: 208.49.103.20 8.4.160.0/24"
+  echo "* DA: 8.9.237.49"
+  echo "* MI: 207.138.32.130"
+  echo "* PA: 209.157.154.79"
+  echo "* ~3mil calls/month"
+  echo "* to test L3 IB: 14439574476"
+}
+
+function shortenURL {
+  LONGURL=$1
+  HERE=$PWD
+
+  echo "This is your long URL:  $LONGURL"
+  temp >> /dev/null
+  wget -q --post-data="url=$LONGURL" -O shortenURL.tmp http://tinyurl.com/create.php
+  echo -n "This is your short URL: "
+  grep hidden shortenURL.tmp | grep tinyurl | cut -f2 -d\"
+  cd $HERE
+}
+
+function helpNagios {
+  echo '  * chkconfig --add nrpe'
+}
+
+function getReplicationLag {
+  DBHOST=$1
+  echo "select (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(value))  FROM ccconf.param WHERE name='replicationtime';" | mysql -h$DBHOST -u"configure" -p'valor%dip'
+}
+
+function getCallcenters {
+echo 'mysql> select * from ccconf.callcenter;
++---------------+---------------------+
+| callcenter_id | name                |
++---------------+---------------------+
+|             1 | liveops             |
+|             2 | sylmark             |
+|             3 | hcctest             |
+|             4 | performlocal        |
+|             5 | qa                  |
+|             6 | wsol                |
+|             7 | Demo                |
+|             8 | FormerlyKAconvergys |
+|            10 | nh                  |
+|            11 | fidelity            |
+|            12 | testcallcenter      |
+|            13 | vpi                 |
+|            14 | PizzaHut            |
+|            15 | hccdemo             |
+|            16 | wsol2               |
+|            17 | Google              |
+|            18 | MobilityProducts    |
+|            19 | dun_broke           |
+|            20 | Accenture           |
+|            21 | AccDemo             |
+|            22 | BeachBody           |
+|            23 | ACNsandbox          |
+|            24 | IBM                 |
+|            25 | fiddev              |
+|            26 | Techline            |
+|            27 | ACNUUNW             |
+|            28 | zzbroken1           |
+|            29 | ACNPopcorn          |
+|            30 | FidSC               |
+|            31 | LifeLock            |
+|            32 | ACNPopcornMNL       |
+|            33 | zzbroken3           |
+|            34 | zzbroken4           |
+|            35 | SFDCsandbox         |
+|            36 | LUE                 |
+|            37 | ITV                 |
++---------------+---------------------+'
+}
+
+function findNoRoleDb
+{
+  echo "select * from replviz.dbinfo where ccconf=0 and cclocal=0 and cclog=0 and ccroute=0 and fulfill=0 and ltoolslow=0 and readonly=0 and readwrite=0 and rep=0 and slow=0;" | mysql -h"db2-sfi" -u"configure" -p"valor%dip"
+}
+
+function helpFlickr {
+  less $HOME/.startup/helpFlickr.txt
+}
+
+function helpRandom {
+  less $HOME/.startup/helpRandom.txt
+}
+
+function helpAnswers {
+  less $HOME/.startup/helpAnswers.txt
+}
+
+function helpWcc {
+  less $HOME/.startup/helpWCC.txt
+}
+
+function helpYst {
+  less $HOME/.startup/helpYst.txt
+}
+
+function helpGit {
+  less $HOME/.startup/helpGit
+}
+
+function helpLola {
+  less $HOME/.startup/helpLola.txt
+}
+
+function helpMarkup {
+  less $HOME/.startup/helpMarkup.txt
+}
+
+function swapfromscratch {
+  host=$1
+  dbid=$2
+
+  echo "echo \";swap $host -fromScratch bad penny db $dbid/ubante\" | nc MASTER 2200"
+}
+
+function helpNetrek
+{
+    echo "Your controls are listed below.  To change these settings launch the Netrek Configuration program.  A shortcut for this program has been created in your Netrek program group."
+  echo ""
+  echo "Mouse Controls:"
+  echo "Left Button     -  Phasers"
+  echo "Middle Button   -  Torpedoes"
+  echo "Right Button    -  Steer"
+  echo "Keyboard Controls:"
+  echo "Messaging            - j  - Be sure to hold your mouse cursor over"
+  echo "                          the Galaxy or Tactical maps when you press 'j'."
+  echo "                           After pressing 'j' type 'A' to send messages to"
+  echo "                           the All Window, type 'T' to send messages"
+  echo "                           to the Team Window, or type the letter/number"
+  echo "                           of the player you would like to send a message to."
+  echo "                           After you type A, T, or the player letter/number, "
+  echo "                           type your message and press enter."
+  echo "Help                 -  h"
+  echo "Torpedoes            -  f"
+  echo "Phasers              -  P"
+  echo "Plasma               -  t"
+  echo "Shield               -  w"
+  echo "Bomb                 -  b"
+  echo "Cloak                -  c"
+  echo "Drop Armies          -  x"
+  echo "Pickup Armies        -  z"
+  echo "Detonate Own Torps   -  v"
+  echo "Detonate Enemy Torps -  Space Bar"
+  echo "Tractor On           -  d"
+  echo "Pressor On           -  g"
+  echo "Tractor/Pressor Off  -  e"
+  echo "Repair               -  R"
+  echo "Refit Ship Type      -  n"
+  echo "Lock on Target       -  r"
+  echo "Target Info          -  i"
+  echo "Planet List          -  p"
+  echo "Docking Premissions  -  y"
+  echo "Quit                 -  q"
+  echo "War Declaration      -  u"
+  echo "Max Warp             -  a"
+  echo "Half Speed           -  #"
+  echo "Warp 0               -  0"
+  echo "Warp 2               -  2"
+  echo "Warp 3               -  s"
+  echo "Warp 4               -  4"
+  echo "Volume Up            -  V"
+  echo "Volume Down          -  Z"
+  echo "Close Special Windows-  W"
+}
+
+function helpMac
+{
+  echo Command-Shift-3: Take a screenshot of the screen, and save it as a file on the desktop
+  echo Command-Shift-4, then select an area: Take a screenshot of an area and save it as a file on the desktop
+  echo Command-Shift-4, then space, then click a window: Take a screenshot of a window and save it as a file on the desktop
+  echo Command-Control-Shift-3: Take a screenshot of the screen, and save it to the clipboard
+  echo Command-Control-Shift-4, then select an area: Take a screenshot of an area and save it to the clipboard
+  echo Command-Control-Shift-4, then space, then click a window: Take a screenshot of a window and save it to the clipboard
+  echo in chrome, Option-Command-i then Command-Shift-P then capture full to get the whole webpage
+  echo sudo port install graphviz
+  echo pbcopy and pbpaste to copy/paste from/to commandline
+  echo brew list  \# to find installed brew packages
+  echo brew list packagenmae \# to list files for packagename
+  echo pkgutil --file-info /usr/local/something  \# more packaging
+  echo 'sudo killall -HUP mDNSResponder'
+  echo 'scutil --dns'
+  echo Command-Shift-g, when in finder to paste full path [yes, this is lame]
+}
+
+function listTechPrefix
+{
+  HOST=$1
+
+  DOIT="echo config | nc cmx${HOST}-sfi 3177 | grep techPrefix"
+  echo $DOIT
+  echo config | nc cmx${HOST}-sfi 3177 | grep techPrefix
+}
+
+function checkKpp
+{
+  HOST=$1
+
+  s tool1-sfi grep $HOST /cc/ops/config/lw2/kb/pod/sf1/*
+}
+
+function checkPeak
+{
+  echo ssr dev8-pai grep cmx57 /var/home/jonv/ops/trunk/config/lw2/kb/pod/sf1/*
+  echo ssr dev8-pai grep raA004839B /var/home/jonv/ops/trunk/config/lw2/kb/hw/sf-hw.kpp
+}
+
+function getPublicIP
+{
+  wget --user-agent "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.9) Gecko/20071025 Firefox/2.0.0.9" -O - -q www.whatismyip.com/automation/n09230945.asp; echo
+}
+
+function lssizedir
+{
+  for i in `ls -l | grep ^d | awk ' { print $9 } '`
+  do
+    du -sk $i
+  done | sort -n
+}
+
+function countdownnodes
+{
+  cluster=$1
+  echo -n "Catalog all size:       "
+  range -c %${cluster}:ALL
+  echo -n "Catalog up size:    "
+  range -c %${cluster}
+  echo -n "Catalog critical count: "
+  range %${cluster}:CRITICAL_COUNT
+  echo -n "Catalog warning count:  "
+  range %${cluster}:WARNING_COUNT
+  echo -n "Catalog down count:     "
+  range -c %${cluster}:DOWN
+  echo -n "already ticketed:       "
+  range -c %${cluster}:ALL,\&%yrt
+  echo -n "master thinks there are these many down: "
+  echo ";gnl -down" | nc ${cluster}master 2200 | tail -1 | tr "," " " | wc -w
+
+}
+
+function getmaster
+{
+  cluster=$1
+  range %$cluster:MASTER_HOST
+}
+
+function getgoodnode2
+{
+  cluster=$1
+  master=`getmaster $cluster`
+  goodnode=`echo ";nm get" | nc $master 2200 | grep active | head -1 | cut -f1 -d\ `
+  echo $goodnode
+}
+
+function getgoodnode
+{
+  cluster=$1
+  master=`getmaster $cluster`;
+  goodnodes=`echo ";nm get" | nc $master 2200 | grep active  | cut -f1 -d\ `;
+  count=`echo $goodnodes | wc -w`
+  randomnumber=`getRandomNumberUpTo $count`
+  echo ";nm get" | nc $master 2200 | grep active  | cut -f1 -d\  | head -$randomnumber | tail -1
+}
+
+function getgoodnodeurl
+{
+  cluster=$1
+  goodnode=`getgoodnode $1`
+  echo "http://$goodnode:2281/"
+}
+
+function gogoodnode
+{ 
+  goodnode=`getgoodnode $1`
+  echo "found $goodnode in $1"
+  ssh -v $goodnode
+}
+
+function counttail
+{
+  local count=$1
+  if [ $count != "2000" ]; then
+    echo "using the last $count lines"
+  fi
+
+  # counttail /export/crawlspace/DSCP/catalog/logs/superdex.log dispatch successful failed host-delay g2b
+
+  file=$2
+  s2=$3
+  s3=$4
+  s4=$5
+  s5=$6
+  s6=$7
+  s7=$8
+  s8=$9
+
+  for i in $s2 $s3 $s4 $s5 $s6 $s7 $s8
+  do
+    echo -n -- $i:\  
+    tail -$count $file | grep -w -c $i
+  done
+}
+
+function counttailsdx
+{
+  if [ -z $1 ]; then
+    count=2000
+  else
+    count=$1
+  fi
+
+  echo -n "Logs starting at: "
+  tail -$count /export/crawlspace/DSCP/catalog/logs/superdex.log | head -1 | cut -c1-20
+  echo -n "Time right now:   "
+  date '+%Y-%m-%d %H:%M:%S'
+  counttail $count /export/crawlspace/DSCP/catalog/logs/superdex.log dispatch successful failed host-delay g2b b2g unmodified
+}
+
+function counttailsdxloop
+{
+  while (true); do date; counttailsdx ; echo; sleep 60; done
+}
+
+function getactivenodes
+{
+  CLUSTER=$1
+  MASTER=`range %$CLUSTER:MASTER_HOST`
+  range `echo ";gnl -active" | nc $MASTER 2200 | tail -1`
+}
+
+function getactivegoodnodes
+{
+  CLUSTER=$1
+  range `echo ";s -v" | nc ${CLUSTER}master 2200 | grep "active\ good" | cut -f1 -d\  | tr "\n" ","`
+}
+
+function getactivegoodrange
+{
+  CLUSTER=$1
+  rawrange=`echo ";s -v" | nc ${CLUSTER}master 2200 | grep "active\ good" | cut -f1 -d\  | tr "\n" ","`
+  rangelist=`range $rawrange | tr "," " "`
+  for i in $rangelist; do echo -n $i:\ \ ;
+	range -c $i
+  done | sort +1 -n
+}
+
+function getactivebadnodes
+{
+  CLUSTER=$1
+  range `echo ";s -v" | nc ${CLUSTER}master 2200 | grep "active" | grep -v "active\ good" | cut -f1 -d\  | tr "\n" ","`
+}
+
+function getactivebadnodescount
+{
+  range -c `getactivebadnodes $1`
+}
+
+function getactivebadnodesnotswapping
+{
+  RANDOM=`getRandomNumber`
+  CLUSTER=$1
+  vitemp=~/tmp/tempfile$RANDOM
+  vitemp2=~/tmp/tempfile2$RANDOM
+
+  echo ";s -v" | nc ${CLUSTER}master 2200 | grep "active" | grep -v "active\ good" | awk ' { print $1 } ' > $vitemp
+  for i in `cat $vitemp`; do grep "swap:$i" sv.out > /dev/null || echo "$i"; done > $vitemp2
+  makerange $vitemp2
+}
+
+function getsparenodes
+{
+  CLUSTER=$1
+  range `echo ";gnl -spare" | nc ${CLUSTER}master 2200 | tail -1`
+}
+
+function getsparegoodnodes
+{
+  CLUSTER=$1
+  range `echo ";s -v" | nc ${CLUSTER}master 2200 | grep "ready\ good" | cut -f1 -d\  | tr "\n" ","`
+}
+
+function getsparegoodnodescount
+{
+  range -c `getsparegoodnodes $1`
+}
+
+function getsparebadnodes
+{
+  m=`getmaster $1`
+  range `echo ";s -v" | nc $m 2200 | grep "\ down\ " | cut -f1 -d\  | tr "\n" ","`
+}
+
+function getsparebadnodescount
+{
+  range -c `getsparebadnodes $1`
+}
+
+function getalladmins
+{
+  echo "working with $ALL_CLUSTERS";
+  alladmins=`( for i in $ALL_CLUSTERS; do range ^%$i; done ; range -e "{gq1admin2con00-9}.yst.yahoo.net","{ac2admin1con00-9}.yst.yahoo.net" ) | sort -u | tr "\n" " "`
+}
+
+function pushtoalladmins
+{
+  file=$1
+  #echo "working with $ALL_CLUSTERS"
+  getalladmins
+  #alladmins=`for i in $ALL_CLUSTERS; do range ^%$i; done | sort -u | tr "\n" " "`
+  echo "found these admins: $alladmins"
+  echo "pushing $1 to /e/c/t now"
+
+  for i in $alladmins;
+  do
+    scp $file $i:/export/crawlspace/tmp &
+  done
+  
+  echo "done"
+}
+
+function makerange
+{
+  file=$1
+
+  range `cat $file | tr "\n" ","`
+}
+
+function mvdate
+{
+  file=$1
+  suffix=`_getDetailedDate2`
+
+  mv $file ${file}_$suffix
+}
+
+function dbidtonode
+{
+  node=$1
+  echo ";nm get" | nc lj3master 2200 | perl -ne '$n=$.-4; print "$n $_"' | grep ^$node\ 
+}
+
+function nodetodbid
+{
+  node=$1
+  echo ";nm get" | nc lj3master 2200 | perl -ne '$n=$.-4; print "$n $_"' | grep $node\ 
+}
+
+function isEven 
+{
+  somenumber=$1
+  perl -e "if (($somenumber/2) == int ($somenumber/2)) { print 0 } else { print 1 }"
+}
+
+function audit-dbid
+{
+  partnernode=""
+  incomingnode=""
+  dbid=$1
+  dbidline=`dbidtonode $dbid`
+  thisnode=`echo $dbidline | cut -f2 -d\  `
+  echo -- looking for dbid $dbid
+  nodeline=`nodetodbid $thisnode`
+  nodetodbid $thisnode
+  incomingnode=`nodetodbid $thisnode | grep swap | cut -f2 -d\ `
+  echo -- finding partner
+  checkEven=`isEven $dbid`
+  if [ $checkEven = "0" ]; then
+        partnerdbid=`expr $dbid + 1`
+        partnerline=`dbidtonode $partnerdbid`
+        echo $partnerline
+        partnernode=`echo $partnerline | cut -f2 -d\ `
+  else
+        partnerdbid=`expr $dbid - 1`
+        partnerline=`dbidtonode $partnerdbid`
+	echo $partnerline
+	partnernode=`echo $partnerline | cut -f2 -d\ `
+  fi 
+  echo -- swap from scratch commands
+  if [ -z $incomingnode ]; then
+      echo "echo \";swap $thisnode -fromScratch too many swaps\" | nc lj3master 2200"
+  else
+      echo "This is incoming: || $incomingnode ||"
+      echo "echo \";backup invalidate -id $dbid\" | nc $partnernode 2280"
+      echo "echo \";shut\" | nc $incomingnode 2280"
+      echo "echo \";shut\" | nc $partnernode 2280 "
+  fi
+  echo
+
+  partnernode=""
+  incomingnode=""
+
+  echo -- checking swap reasons
+  wget --quiet -O - http://lj3master.yst.yahoo.net:2201/alertsList.html?name=swappedOut | grep "dbid=$dbid)" | perl -ne 'm|>(20\d\d[\d-]*).*(\d\d:\d\d:\d\d).*(\(dbid=[\d]*[^<]*)| && print "$1 $2: $3\n"'
+
+}
+
+function getlj3testnodes
+{
+  echo ";nm get" | nc lj3master 2200 | perl -ne '$n=$.-4; print "$n $_"' | egrep "^72 |^73 |^84 |^85 |^96 |^97 |^108 |^109 |^120 |^121 " | awk ' { print $2 } '
+}
+
+function checklj3testnodes
+{
+  for i in `getlj3testnodes`;
+  do rofn ; echo ";version" | nc $i 2280 | tail -1; done
+}
+
+function validatetestnodes
+{
+  actual=`getlj3testnodes | range -`;
+  expected=`echo ";cvar get cm.autoswap.ignoreList" | nc lj3master 2200 | tail -1`;
+  echo "actual minus expected"
+  range {$actual},-{$expected};
+  echo "expected minus actual"
+  range {$expected},-{$actual}
+}
+
+function checkslaveclients
+{
+  echo -n "Control logs starting at: ";
+
+  CONTROLLOG=/export/crawlspace/DSCP/catalog/logs/control.log
+  #CONTROLLOG=/home/ubante/tmp/control.log
+  IGNORE="quit|cdma|adminhost|ystlab|csdev"
+
+  tail -10000 $CONTROLLOG | head -1 | cut -c1-20;
+  echo -n "Time right now:           ";
+  date '+%Y-%m-%d %H:%M:%S';
+  echo "the most common clients:"
+  tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort | uniq -c | sort | tail
+  echo
+  echo "These clients belong to these clusters:"
+  range *"{`tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort -u | tr "\n" ","`}"
+}
+
+function checkmasterclients
+{
+  echo -n "Control logs starting at: ";
+
+  CONTROLLOG=/export/crawlspace/DSCP/catMaster/logs/control.log
+  #CONTROLLOG=/home/ubante/tmp/control.log
+  IGNORE="quit|cdma|adminhost|ystlab|csdev"
+
+  tail -10000 $CONTROLLOG | head -1 | cut -c1-20;
+  echo -n "Time right now:           ";
+  date '+%Y-%m-%d %H:%M:%S';
+  echo "the most common clients:"
+  tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort | uniq -c | sort | tail
+  echo
+  echo "These clients belong to these clusters:"
+  range *"{`tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort -u | tr "\n" ","`}"  
+}
+
+function checkmasterclientslong
+{
+  echo -n "Control logs starting at: ";
+
+  CONTROLLOG=/export/crawlspace/DSCP/catMaster/logs/control.log
+  IGNORE="quit|cdma|adminhost|ystlab|csdev"
+
+  head $CONTROLLOG | tail -1 | cut -c1-20;
+  echo -n "Time right now:           ";
+  date '+%Y-%m-%d %H:%M:%S';
+  echo "the most common clients:"
+  cat $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort | uniq -c | sort | tail
+  echo
+  echo "These clients belong to these clusters:"
+  range *"{`tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort -u | tr "\n" ","`}"
+}
+
+function dateprefix ()
+{
+  perl -MPOSIX -ne 'print strftime("%Y/%m/%d %H:%M:%S", localtime()), ": $_";'
+}
+
+function setignore ()
+{
+  IGNORE="{`echo ';cvar get cm.autoswap.ignoreList' | nc lj3master 2200 | tail -1`}"
+}
+
+function simplecatalogtest ()
+{
+  # this is from admintools/catalog-check - it may be incomplete
+  wget -T 3 -t 2 -q -O /dev/null http://test.com/ || echo LLF failed
+  xterm -display localhost:1 -e sleep 1 || echo "Mozilla check (vnc) failed"
+}
+
+function hosttoip ()
+{
+  hostname=$1
+  host $hostname | tail -1 | cut -f4 -d\ 
+}
+
+function dateprefix ()
+{
+  perl -MPOSIX -ne '$|++; print strftime("%Y/%m/%d %H:%M:%S", localtime()), ": $_";'
+}
+
+function hoststorange ()
+{
+  range *"{$1}"
+}
+
+function longpath ()
+{
+  echo `pwd`/$1
+}
+
+function longerpath ()
+{
+  echo -n "scp -rp "
+  echo -n `hostname -f`:`pwd`/$1
+  echo " . "
+  echo -n "rsync -avze ssh "
+  echo -n `hostname -f`:`pwd`/$1
+  echo " . "
+}
+
+
+function pushnewcopsbuild ()
+{
+  # will push out the newest cops_tools build (promoted or not)
+  # to admins
+
+  HERE=$PWD
+
+  echo
+  echo "PHASE 1: the push"
+  cd /nfs/ystools/vol/ystools/ystbuildroot/ci/jobs/cops_tools_trunk_secondary/builds
+  newestbuild=`/bin/ls -rt | grep -v ^201 | tail -1`
+  cd $newestbuild/archive/artifacts/
+  build=`echo cops_tools*`
+  buildshort=`echo $build | cut -f1-3 -d\.`
+  echo "found #build $newestbuild and copying out $build"
+
+  admins="gq1admin2con08 gq1admin2con09 ac2admin1con08"
+  for i in $admins; do rof; 
+    scp $build $i:/export/crawlspace/tmp &
+  done
+
+  cd $HERE
+ 
+  echo
+  echo "PHASE 2: the switch"
+  echo "# for cops_util, become perm@gq1admin2con08"
+  echo "tar zxvf /export/crawlspace/tmp/$build -C cops_tools/"
+  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
+  echo "~/bin/uberSwitch -c cops -r b3060358.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
+  echo
+  echo "# for lj3, become perm@gq1admin2con08"
+  echo "tar zxvf /export/crawlspace/tmp/$build -C cops_tools/"
+  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
+  echo "~/bin/uberSwitch -c cops -r %lj3 cops_tools/${buildshort}rc${newestbuild}"
+  echo
+  echo "# for wccmasters, become perm@gq1admin2con09"
+  echo "tar zxvf /export/crawlspace/tmp/$build -C cops_tools/"
+  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
+  echo "~/bin/uberSwitch -c cops -r b3130000.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
+  echo "~/bin/uberSwitch -c cops -r b3130480.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
+  echo
+  echo "# for an adminnode itself, become perm@gq1admin2con09"
+  echo "tar zxvf /export/crawlspace/tmp/$build -C cops_tools/"
+  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
+  echo "rm /export/crawlspace/perm-local/cops_tools"
+  echo "ln -s /home/perm/cops_tools/${buildshort}rc${newestbuild} /export/crawlspace/perm-local/cops_tools"
+}
+
+function pushnewcopsbuild-quick ()
+{
+  # will push out the newest cops_tools build (promoted or not)
+  # to admins
+
+  HERE=$PWD
+
+  echo
+  echo "PHASE 1: the push"
+  CTOOLBUILDDIR=/nfs/ystools/vol/ystools/ystbuildroot/ci/jobs/cops_tools_trunk_secondary/builds
+  cd /nfs/ystools/vol/ystools/ystbuildroot/ci/jobs/cops_tools_trunk_secondary/builds
+  newestbuild=`/bin/ls -rt | grep -v ^201 | tail -1`
+  cd $newestbuild/archive/artifacts/
+  build=`echo cops_tools*`
+  buildshort=`echo $build | cut -f1-3 -d\.`
+  echo "found #build $newestbuild and copying out $build"
+  fullpath=/export/crawlspace/tmp/${build}rc${newestbuild}
+  admins="gq1admin2con08 gq1admin2con09 ac2admin1con08"
+  for i in $admins; do rof;
+    #scp $build $i:/export/crawlspace/tmp
+    echo "skipping the copy: scp $CTOOLBUILDDIR/$newestbuild/archive/artifacts/$build $i:$fullpath"
+  done
+
+  cd $HERE
+
+  echo
+  echo "PHASE 2: the switch"
+  echo "# for cops_util, become perm@gq1admin2con08"
+  echo "tar zxvf $fullpath -C cops_tools/"
+  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
+  echo "~/bin/uberSwitch -c cops -r b3060358.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
+  echo
+  echo "# for lj3, become perm@gq1admin2con08"
+  echo "tar zxvf $fullpath -C cops_tools/"
+  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
+  echo "~/bin/uberSwitch -c cops -r %lj3 cops_tools/${buildshort}rc${newestbuild}"
+  echo
+  echo "# for wccmasters, become perm@gq1admin2con09"
+  echo "tar zxvf $fullpath -C cops_tools/"
+  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
+  echo "~/bin/uberSwitch -c cops -r b3130000.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
+  echo "~/bin/uberSwitch -c cops -r b3130480.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
+  echo
+  echo "# for an adminnode itself, become perm@gq1admin2con09"
+  echo "tar zxvf $fullpath -C cops_tools/"
+  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
+  echo "rm /export/crawlspace/perm-local/cops_tools"
+  echo "ln -s /home/perm/cops_tools/${buildshort}rc${newestbuild} /export/crawlspace/perm-local/cops_tools"
+}
+
+function whatismydbid ()
+# unfinished
+{
+  name=`hostname`
+  shortname=`echo $name | cut -f1 -d.`
+  cluster=`range *$name`
+  master=`range %$cluster:MASTER_HOST`
+  
+}
+
+function printWikiStub {
+  echo '%INCLUDE{"WccStyle"}%'
+  echo 
+  echo
+  echo '%INCLUDE{"WccFooter"}%'
+}
+
+function findvm2 {
+  for i in `/bin/ps -ef | grep [j]ava | tr " " "\n" | grep ^org`; do
+    pid=`/bin/ps -ef | grep $i | grep -v grep | awk ' { print $2 } '`
+    printf "%5s: %s\n" $pid $i
+  done
+}
+
+function findvmold {
+  for i in `/bin/ps -ef | grep [j]ava | tr " " "\n" | grep ^org`; do
+    pid=`/bin/ps -ef | grep $i | grep -v grep | awk ' { print $2 } '`
+    printf "%5s: %s\n" $pid $i
+  done
+}
+
+function findvm {
+  for i in `/bin/ps -ef | grep [j]ava | tr " " "\n" | grep ^org | sort -u`; do
+    pid=`/bin/ps -ef | grep $i | grep -v grep | awk ' { print $2 } '`
+
+    combined=""
+    for j in $pid; do combined="$j:$combined"; done
+    printf "%15s %s\n" $combined $i
+
+  done
+}
+
+function getip {
+  host `who -m | perl -ane ' /\((.*)\)/ && print $1 '` | cut -f4 -d\ 
+}
+
+function doublednsreverselookup {
+# useful for debugging apache mod_access
+  ip=$1
+  fqdn=`host $1 | cut -f5 -d \  `
+  ip2=`host $fqdn | grep address | awk ' { print $4 } '`;
+ 
+  echo "Given IP: $ip"
+  echo "Reverse:  $fqdn" 
+  echo "Rev IP:   $ip2"
+  echo
+  if [ $ip = $ip2 ]; then
+    echo "success"
+  else
+    echo "failure"
+  fi
+}
+
+function getaddress {
+echo John Ubante
+echo c/o Yahoo
+echo 475 Sansome Street
+echo San Francisco, CA, 94111
+}
+
+function quick_pc_check {
+  echo -n checking yapache:\ 
+  ps -ef | grep [y]apache | wc -l
+
+  echo; echo -n checking ysquid:\ 
+  ps -ef | grep [y]squid | wc -l
+
+  echo; echo -n checking nginx:\ 
+  ps -ef | grep [n]ginx | wc -l
+
+  echo; echo -n checking mounts:\ 
+  #df -P | grep -v Available -c
+  df -P -x ext2 -x ext3 -x tmpfs | grep -v Available -c
+
+  echo; echo -n statuses:\ 
+  status=`ystatus status | grep -a3 running | grep ^[a-z] | cut -f1 -d: | tr "\n" " "`
+  echo $status | wc -w
+  echo $status
+  echo
+}
+
+function quick_sm_check {
+  echo -n checking JVMs:\ 
+  ps -ef | grep [S]MServer | perl -lane ' print join " ", @F[0,1,-1] '
+
+  echo; echo -n checking mounts:\ 
+  df -P -x ext2 -x ext3 -x tmpfs | grep -v Available -c
+}
+
+function sample_host {
+  echo $FARM_HOSTS | tr " " "\n" | grep cache$1
+}
+
+function bigstatus {
+  echo Starting farm$1
+  for i in vip old_vip akamai farm$1;
+  do
+    echo -- $i --
+    ystatus start $i
+  done
+}
+
+function stall {
+# because Cisco DisConnect
+  while (true); do date; sleep 300; done
+}
+
+function monack {
+  host=$1
+  monstatus ack --yes --host $host --add "acking"
+}
+
+function mondt {
+  host $1
+  monstatus downtime --yes --host $host "downtiming"
+}
+
+function dbdata2 {
+  db=$1
+  ssh build.flickr.corp.mud.yahoo.com /usr/local/flickr/bin/dbdata $db | grep -E "sidea|sideb|bcppair" | awk ' { print $2 } '
+}
+
+function mcd {
+  directory=$1
+  mkdir $directory
+  cd $directory
+  pwd
+}
+
+function diffNoTime
+{
+    inputA=$1
+    inputB=$2
+
+	if [ x$inputB = x ] ; then
+		echo "Usage: diffNoTime file1 file2"
+		return
+	fi
+
+    here=$PWD
+    temp
+    cd $here
+    RANDOMA=`getRandomNumber`
+    RANDOMB=`expr $RANDOMA + 1`
+    fileA=~/tmp/diff$RANDOMA
+    fileB=~/tmp/diff$RANDOMB
+    echo comparing $inputA and $inputB
+    echo making $fileA and $fileB
+    cat $inputA | perl -pe 's/2013-\d\d-\d\d/2013-MM-DD/g' | perl -pe 's/\d\d:\d\d:\d\d/hh:mm:ss/g' | perl -pe 's/mm:ss,\d\d\d/mm:ss,fff/' | perl -pe 's|13/\d\d/\d\d|13/MM/DD|g' > $fileA
+    cat $inputB | perl -pe 's/2013-\d\d-\d\d/2013-MM-DD/g' | perl -pe 's/\d\d:\d\d:\d\d/hh:mm:ss/g' | perl -pe 's/mm:ss,\d\d\d/mm:ss,fff/' | perl -pe 's|13/\d\d/\d\d|13/MM/DD|g' > $fileB
+
+    diff $fileA $fileB
+    rm $fileA $fileB
+}
+
+function cdcd {
+    file=$1
+    dir=`dirname $file`
+
+    cd $dir
+}
+
+function helpBug {
+    echo "Hello YNOC,
+
+I’m a Yahoo that uses our products.  Since I’m concerned about how the public, customers and other Yahoos see our stuff, I’d like to report a possible problem with $1."
+}
+
+function decode {
+	echo; echo
+	echo $1 | /usr/bin/base64 -d
+	echo; echo
+}
+
+function syncStartup 
+{
+    HERE=$PWD
+    cd
+    rsync -avze ssh sorrytake.corp.yahoo.com:/home/ubante/.startup . 
+    cd $HERE
+}
+
+function eis {
+  host=$1
+  now=`_getDetailedDate2`
+  [ -e ~/tmp/$host ] && mv ~/tmp/$host ~/tmp/$host-$now
+  explodeigor -s $host | tee ~/tmp/$host
+  echo; echo;
+  vim ~/tmp/$host
+  echo check out ~/tmp/$host
+}
+
+function gogetyinstpackage {
+  package=$1
+  cd ~/tmp
+  mkdir $package
+  cd $package
+  yinst fetch $package
+  tar zxvf ${package}*
+  echo; echo;
+  ls
+}
+
+function getFreshCookie {
+  echo "Getting a fresh Backyard cookie"
+  echo
+  echo -n "Enter your password: "
+  read -s password
+  echo
+  curl --insecure -c cyby.txt -d "id=ubante&pass_word=$password&action=login" https://by.bouncer.login.yahoo.com/login/ > bouncer.html
+  echo
+  echo use: curl -b cyby.txt -o OUTPUTFILE http://i.love.bacon.com
+}
+
+function helpOpus {
+  less $HOME/.startup/helpOpus.txt
+}
+
+function helpChef {
+  less $HOME/.startup/helpChef.txt
+}
+
+function helpDocker {
+  less $HOME/.startup/helpDocker.txt
+}
+
+function helpPin {
+  less $HOME/.startup/helpPin.txt
+}
+
+function helpData {
+  less $HOME/.startup/helpData.txt
+}
+
+function getLastChar {
+  str=$1
+  strLength=$((${#str}-1))
+  lastChar=${str:$strLength:1}
+}
+
+function printColors {
+  echo -e "This is ${RED}red${NC}."
+  echo -e "This is ${GREEN}green${NC}."
+  printf "This is ${YELLOW}yellow${NC}.\n"
+  echo -e "This is ${BLUE}blue${NC}."
+  echo -e "This is ${GRAY}gray${NC}."
+}
+
+function gitclone {
+  # The new structure will be:
+  # ~/src/VCS-universe/org/repo
+  # eg:
+  # /Users/j.ubante/src/github.com/GoogleCloudPlatform/terraformer
+
+  srcDir=~/src
+  repository=$1
+
+  if [ -z $repository ] ; then
+    echo "Usage: gitclone reponame"
+    echo
+    echo "This will create a dir tree in ${srcDir}."
+    echo
+    echo "Example: gitclone git@github.com:GoogleCloudPlatform/terraformer.git"
+    return 1
+  fi
+
+  vcsDir=`echo $repository | cut -f1 -d\: | cut -f2 -d@`
+  orgDir=`echo $repository | cut -f2 -d\: | cut -f1 -d\/`
+  repoDir=`echo $repository | cut -f2 -d\/ | cut -f1 -d\.`
+
+  vcsPath=$srcDir/$vcsDir
+  orgPath=$vcsPath/$orgDir
+  repoPath=$orgPath/$repoDir
+  
+  if [ -e $repoPath ]; then
+    echo "This already exists: $repoPath"
+    if ( _yes_no "$repoDir repo already exists.  Archive? [y/n] "); then
+      echo "Archiving to $GRITYARD..."
+
+	  # This could go into a new function, grityardcore, and be reused by the griyard function.
+      getLastChar $repoPath
+      now=`_getDetailedDate2`;
+      destdir=$GRITYARD/${repoDir}_$now;
+	  echo Moving $repoPath to $destdir
+      mv $repoPath $destdir || (echo fatal problems && return)
+
+      echo "Re-cloning..."
+    else
+      ls -ld $repoPath
+      cd $repoPath
+      echo Local:
+      git --no-pager branch
+      echo Remote:
+      git --no-pager branch -r
+      echo
+      git status
+      echo
+      echo Be sure to git pull....
+
+      return 1
+    fi
+  fi
+
+  for aPath in $vcsPath $orgPath; do
+    if [ ! -e $aPath ]; then
+      echo "Creating $aPath"
+      mkdir $aPath
+    fi
+  done
+
+  #echo $repoPath && return
+ 
+  cd $orgPath
+  echo "Trying to clone ${repository}...."
+  git clone ${repository} || return 1
+  cd $repoDir
+  echo
+  pwd
+  echo
+  echo Remote:
+  git --no-pager branch -r
+  echo Local:
+  git --no-pager branch
+  pwd
+}
+
+function gitclonell {
+  # The new structure will be:
+  # ~/src/VCS-universe/org/repo
+  # eg:
+  # /Users/john.ubante/src/github-ll/ig/deploy.infra_baseline
+
+  repository=$1
+
+  if [ -z $repository ] ; then
+    echo "Usage: gitclone reponame"
+    echo
+    echo "Example: gitclone ig/deploy.resolvconf_fix"
+    return 1
+  fi
+
+  orgDir=`echo $repository | cut -f1 -d\/`
+  repoDir=`echo $repository | cut -f2 -d\/`
+
+  if [ -e $repoDir ]; then
+    echo -n "You are in: "
+    pwd
+    if ( _yes_no "$repository already exists.  Delete? [y/n] "); then
+      echo "Deleting..."
+      rm -rf $repoDir
+      echo "Re-cloning..."
+    else
+      ls -ld $repoDir
+      cd $repoDir
+      echo Local:
+      git --no-pager branch
+      echo Remote:
+      git --no-pager branch -r
+      echo
+      git status
+      echo
+      echo Be sure to git pull....
+
+      return 1
+    fi
+  fi
+
+  gitpath=git@github.int.llabs.io:${orgDir}/${repoDir}.git 
+  echo "Trying to clone ${gitpath}...."
+  git clone ${gitpath} || return 1
+  cd $repoDir
+  echo
+  pwd
+  echo
+  echo Local:
+  git --no-pager branch
+  echo Remote:
+  git --no-pager branch -r
+
+  # Check to see if you're in a tree
+  echo
+  parentDir=$(basename `dirname $PWD`)
+  if [ $orgDir = $parentDir ]; then
+    echo -ne "${GREEN}You are in this repo tree: "
+    pwd
+    echo -e "${NC}"
+  else
+    echo -e "${YELLOW}WARNING: you are not in the right org directory.${NC}"
+    echo "I expected you to be in the $orgDir directory tree and you are in:"
+    pwd
+  fi
+  
+}
+
+function gitclonelegacy {
+  repository=$1
+
+  if [ -z $repository ] ; then 
+    echo "Usage: gitclonelegacy reponame"
+    echo
+    echo "Stop using this because it talks to cgit which is deprecated."
+    echo
+    echo "Example: gitclonelegacy ig/deploy/resolvconf"
+    return 1
+  fi
+    
+  repoDir=`echo $repository | sed 's/\//__/g'`
+
+  if [ -e $repoDir ]; then
+    echo -n "You are in: "
+    pwd
+    if ( _yes_no "$repository already exists.  Delete? [y/n] "); then
+      echo "Deleting..."
+	  rm -rf $repoDir
+	  echo "Re-cloning..."
+	else
+      ls -ld $repoDir
+      cd $repoDir
+      echo Local:
+      git --no-pager branch
+      echo Remote:
+      git --no-pager branch -r
+   	  echo
+      git status
+      echo
+  	  echo Be sure to git pull....
+
+      return 1
+	fi
+  fi
+
+  #/usr/local/bin/git clone git@git.evdc.wavemarket.com:$repository $repoDir
+  git clone git@git.evdc.wavemarket.com:$repository $repoDir || return 1
+  cd $repoDir
+  echo
+  pwd
+  echo
+  echo Local:
+  git --no-pager branch
+  echo Remote:
+  git --no-pager branch -r
+}
+
+function count { 
+  seq $1 $2 
+}
+
+function git-absolute-path {
+  fullpath=$([[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}")
+  gitroot="$(git rev-parse --show-toplevel)" || return 1
+  [[ "$fullpath" =~ "$gitroot" ]] && echo "${fullpath/$gitroot\//}"
+}
+
+function getGitPath {
+  if [ -z $1 ] ; then
+    echo "Usage: getGitPath filename"
+    return 1
+  fi
+  filename=$1
+
+  # For github
+  gitOrg=`git remote -v | grep fetch | awk ' { print $2 } ' | cut -f2 -d\: | cut -f1 -d/`
+  gitRepo=`git remote -v | grep fetch | awk ' { print $2 } ' | cut -f2 -d\: | cut -f2 -d/ | cut -f1 -d\.`
+  gitBranch=`git --no-pager branch | grep \* | awk ' { print $2 } '` 
+  gitPath=`git-absolute-path`
+  gitUrl="https://github.com/${gitOrg}/${gitRepo}/blob/${gitBranch}/${gitPath}${filename}"
+
+  echo
+  echo $gitUrl
+  echo
+
+  open $gitUrl
+}
+
+# http://www.tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html
+# 0;32m is dark green
+# 1;32m is light green but it jacks up black on a colored background
+function prefixPS1 {
+  export PS1='\[\033[0;32m\]'$PS1
+}
+
+# git checkout develop
+function gcd {
+  git checkout develop
+  
+  if [ $? -eq 1 ]; then
+	echo 
+	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "There is no develop branch to checkout."
+    echo "Either make one or think more about it."
+    return
+  fi
+
+  echo
+  git --no-pager branch
+  echo
+  git --no-pager branch -r
+
+}
+
+# putting this here so it doesn't get duplicated
+function gcm {
+  # decide between main or master
+  # core-api uses "master" while newer repos use "main"
+  primary_branch_name=master
+  git branch -r | grep -iq origin/main$ && primary_branch_name=main
+
+  git checkout $primary_branch_name
+  echo
+  git --no-pager branch
+  echo
+  git --no-pager branch -r
+}
+
+function checkDnsServers {
+  for domain in engr evdc evidc hq sfdc; 
+  do 
+    for ns in ns1 ns2; 
+    do 
+      fqdn=${ns}.${domain}.wavemarket.com; 
+      host $fqdn; 
+    done; 
+  done
+}
+
+function set_terminal_title {
+  echo -n -e "\033]0;$1\007"
+}
+
+function t8 {
+  hostname -f
+  ip route get 8.8.8.8
+  traceroute 8.8.8.8
+}
+
+function unknow {
+  cp ~/.ssh/known_hosts ~/.ssh/known_hosts-original
+  ssh-keygen -R $1 -f ~/.ssh/known_hosts
+  echo
+  echo "The diff:"
+  diff ~/.ssh/known_hosts ~/.ssh/known_hosts-original
+}
+
+function unknown {
+  unknow $1
+}
+
+function gfogrom {
+    primary_branch_name=`git branch -r | grep origin/HEAD | awk ' { print $3 } ' | cut -f2 -d\/`
+    # it's possible that there is no origin/HEAD because the local repo
+    # was `git remote add`d, eg this repo was once.  Assume "main" for now.
+    if [ -z "$primary_branch_name" ]; then
+      echo "could not determine origin/HEAD; using main";
+      primary_branch_name=main;
+    fi
+    echo "primary branch ==> $primary_branch_name"
+    echo git fetch origin --prune....;
+    git fetch origin --prune;
+    echo;
+    echo switching to $primary_branch_name....;
+    git checkout $primary_branch_name;
+    echo git rebase origin/$primary_branch_name....;
+    git rebase origin/$primary_branch_name;
+    echo switching back....;
+    git checkout -;
+    echo
+}
+
+# You have to first cd into the root of the repos, eg
+# cd /Users/j.ubante/src/github.com/GlossGenius
+# TODO: add some checks to make sure the CWD is correct.
+function update_repos {
+	for i in *;
+	do 
+		rof; 
+		cd $i; 
+		gb; 
+#		if ( _yes_no "are you in main or master?" ); then 
+#			echo doing it; 
+#			gfogrom;
+#		else 
+#			echo skipping; 
+#		fi; 
+		gfogrom
+		cd ..;
+		echo 
+	done
+}
+
+# This will quickly add and commit changes in CWD.
+# gagcm = git add git commit -m
+function gagcm {
+  if [ $# -eq 0 ]; then
+	# Display conventional commit prefixes.
+	echo build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test
+	return
+  fi
+
+  echo Using this for comment:
+  echo $1
+
+  git add . && git commit -m "$1"
+
+}
+
+
+
+
+
+
