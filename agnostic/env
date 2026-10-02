@@ -1,40 +1,18 @@
 PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/bin:/sbin:$HOME/bin:$HOME/sbin
 PS2="<-gimme more-> "
 #export PI=`echo "scale=10; 4*a(1)" | bc -l`
-export CVSROOT=":pserver:$USER@cvs.liveops.com:/code"
 export CVS_RSH='ssh'
 export HISTFILESIZE=100000
 export HISTSIZE=100000
 export HISTTIMEFORMAT='%F %T '
 unset HISTCONTROL  # this overrides the default of "ignorespace"
-export IGOR_PROPERTY=yanswers
 export LESS="-X -i -j7 -R" # for git
 export EDITOR=vi
 export PAGER="less -i"
 export LS_COLORS='no=00:fi=00:di=01;34:ln=00;36:pi=40;33:so=00;35:bd=40;33;01:cd=40;33;01:or=01;05;37;41:mi=01;05;37;41:ex=00;32:*.cmd=00;32:*.exe=00;32:*.com=00;32:*.btm=00;32:*.bat=00;32:*.sh=00;32:*.csh=00;32:*.tar=00;31:*.tgz=00;31:*.arj=00;31:*.taz=00;31:*.lzh=00;31:*.zip=00;31:*.z=00;31:*.Z=00;31:*.gz=00;31:*.bz2=00;31:*.bz=00;31:*.tz=00;31:*.rpm=00;31:*.cpio=00;31:*.jpg=00;35:*.gif=00;35:*.bmp=00;35:*.xbm=00;35:*.xpm=00;35:*.png=00;35:*.tif=00;35:'
 export SSH_ASKPASS=1
-# it's hard to say goodbye
-#export SVN_SSH=/usr/local/bin/yssh
-#export SVNROOT=svn+ssh://svn.corp.yahoo.com/yahoo/search/cops
-#export SVNCACHE=/export/crawlspace/ubante/cache
 export SVN_EDITOR=vi
-export CYN=crawl.yahoo.net
-export YYN=yst.yahoo.net
-export FC_CLUSTERS="lm504 catalog_west_fc_1"
-export DE_CLUSTERS="catalog_west_de_1"
-export SMS_CLUSTERS="sj302 sj301 sj501"
-export XORRO_CLUSTERS="zj302 zj501"
-export KK_CLUSTERS="oj2 oj501 oj3"
-export ALL_CLUSTERS="$FC_CLUSTERS $DE_CLUSTERS $XORRO_CLUSTERS $KK_CLUSTERS"
-#export SECODEF="/home/ubante/p4src/seco_defs"
-export SUPERFRESH="{wcc01-5}.woo.gq1.yahoo.com"
 export Z="~/tmp/randomtempfile"
-export CLASSPATH=/export/crawlspace/hadoop/lib/commons-logging-1.0.4.jar:/export/crawlspace/perm/hadoop-1.1.7/hadoop-core-0.20.3.jar:$CLASSPATH
-export LAUNCHERS_PROD="launcher1.wcc.gq1.yahoo.com launcher2.wcc.gq1.yahoo.com launcher3.wcc.gq1.yahoo.com"
-export LAUNCHERS_STAG="launcher1.stg.wcc.gq1.yahoo.com launcher2.stg.wcc.gq1.yahoo.com launcher3.stg.wcc.gq1.yahoo.com"
-export LAUNCHERS_INT="launcher1.int.wcc.gq1.yahoo.com"
-export LAUNCHERS_DEV="launcher1.dev.wcc.gq1.yahoo.com launcher2.dev.wcc.gq1.yahoo.com launcher3.dev.wcc.gq1.yahoo.com launcher4.dev.wcc.gq1.yahoo.com"
-export LAUNCHERS="$LAUNCHERS_DEV $LAUNCHERS_INT $LAUNCHERS_STAG $LAUNCHERS_PROD"
 
 # No need to include your own name in the PS1
 me=`whoami`
@@ -44,22 +22,9 @@ if [ $me != j.ubante ]; then
 	export userbit="$me-"
 fi
 
-# Decide to display the datacenter in prompt or not
-# If this is a YST host, then the hostname doesn't contain the datacenter
-# else add the datacenter to my prompt; create a brief hostname
-#secondword=`hostname | cut -f2 -d\.`
-#if [ $secondword == yst ]; then
-#	export bhostname=`hostname | cut -f1 -d\.`
-#else
-#	export firstname=`hostname | cut -f1 -d\.`
-#	export datacenter=`hostname | perl -ne '/\.(...)\.yahoo/ && print $1'`
-#    export bhostname=$firstname:$datacenter
-#fi
 export bhostname=`hostname | cut -f1 -d\.`
 
 export PS1='\[\033[7;33m\]$(date +%H%M)\[\033[0m\]-\[\033[1;33m\]\[\033[0;31m\]$userbit\[\033[1;33m\]$bhostname\[\033[0m\]:\[\033[1;32m\]\W\$ \[\033[0m\]'
-
-export hypervisors="hv1.engr.wavemarket.com hv2.engr.wavemarket.com hv-dmz1.evdc.wavemarket.com hv-dmz2.evdc.wavemarket.com hv-dmz3.evdc.wavemarket.com hv-dmz4.evdc.wavemarket.com hv-dmz5.evdc.wavemarket.com hv-dmz6.evdc.wavemarket.com hv-dmz7.evdc.wavemarket.com hv-dmz8.evdc.wavemarket.com hv-dmz9.evdc.wavemarket.com hv-dmz10.evdc.wavemarket.com hv-dmz11.evdc.wavemarket.com hv-dmz12.evdc.wavemarket.com hv-dmz13.evdc.wavemarket.com hv-dmz14.evdc.wavemarket.com hv-dmz15.evdc.wavemarket.com hv-dmz16.evdc.wavemarket.com hv-dmz17.evdc.wavemarket.com hv-dmz18.evdc.wavemarket.com hv1.evidc.wavemarket.com hv2.evidc.wavemarket.com hv3.evidc.wavemarket.com hv1.hq.wavemarket.com hv2.hq.wavemarket.com vci-elk-hv1.sfdc.wavemarket.com vci-elk-hv2.sfdc.wavemarket.com vci-elk-hv3.sfdc.wavemarket.com vci-elk-hv4.sfdc.wavemarket.com vci-elk-hv5.sfdc.wavemarket.com vci-elk-hv6.sfdc.wavemarket.com hv1-vci.sfdc.wavemarket.com hv2-vci.sfdc.wavemarket.com hv3-vci.sfdc.wavemarket.com hv4-vci.sfdc.wavemarket.com hv5-vci.sfdc.wavemarket.com hv6-vci.sfdc.wavemarket.com hv7-vci.sfdc.wavemarket.com hv8-vci.sfdc.wavemarket.com hv9-vci.sfdc.wavemarket.com hv10-vci.sfdc.wavemarket.com hv11-vci.sfdc.wavemarket.com hv12-vci.sfdc.wavemarket.com hv13-vci.sfdc.wavemarket.com hv14-vci.sfdc.wavemarket.com hv1-vci-ext-stable.sfdc.wavemarket.com hv2-vci-ext-stable.sfdc.wavemarket.com hv3-vci-ext-stable.sfdc.wavemarket.com aci-hv10.aci.sfdc.wavemarket.com aci-hv11.aci.sfdc.wavemarket.com aci-hv12.aci.sfdc.wavemarket.com hv1.common.sfdc.wavemarket.com hv2.common.sfdc.wavemarket.com hv3.common.sfdc.wavemarket.com hv4.common.sfdc.wavemarket.com hv5.common.sfdc.wavemarket.com hv1.afm.sfdc.wavemarket.com hv2.afm.sfdc.wavemarket.com hv3.afm.sfdc.wavemarket.com hv4.afm.sfdc.wavemarket.com hv5.afm.sfdc.wavemarket.com hv6.afm.sfdc.wavemarket.com hv7.afm.sfdc.wavemarket.com hv2.sfp.sfdc.wavemarket.com hv3.sfp.sfdc.wavemarket.com hv4.sfp.sfdc.wavemarket.com hv5.sfp.sfdc.wavemarket.com hv6.sfp.sfdc.wavemarket.com hv7.sfp.sfdc.wavemarket.com hv8.sfp.sfdc.wavemarket.com hv9.sfp.sfdc.wavemarket.com hv1.tfw.sfdc.wavemarket.com hv2.tfw.sfdc.wavemarket.com hv3.tfw.sfdc.wavemarket.com hv4.tfw.sfdc.wavemarket.com hv5.tfw.sfdc.wavemarket.com hv1.sfdc.wavemarket.com hv2.sfdc.wavemarket.com"
 
 # colors
 export RED='\033[0;31m'

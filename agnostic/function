@@ -148,8 +148,6 @@ function _get_spew_hosts
 
 function _spew
 {
-  #rsync --cvs-exclude --delete -avze ssh $HOME/.startup ubante@$1:
-  #rsync --cvs-exclude --delete -avze ssh $HOME/.startup john.ubante@$1:
   rsync --cvs-exclude --delete -avze ssh $HOME/.startup jubante@$1:
 }
 
@@ -190,67 +188,6 @@ function spewtohosts
   done
 }
 
-function spewInsanely
-{   
-    if [ $HOSTNAME != "mucheither.sanfrancisco.corp.yahoo.com" ]; then
-        if ( _yes_no "You are on $HOSTNAME, is this cool?" ); then
-            _spew_insane
-        else
-            echo "exiting"
-        fi
-    else
-        _spew_insane
-    fi
-}
-
-function spewtonewhosts
-{
-  local newhosts=$@
-  LOGDIR=~/working/hosts/
-  LOGFILE=hostswithaccounts
-  HERE=$CWD
-
-  for host in $newhosts;
-  do
-    echo -- spewing to $host --
-    #ssh john.ubante@$host mkdir --mode=0700 .ssh
-    ssh jubante@$host mkdir --mode=0700 .ssh
-    #scp -rp ~/.ssh/id_rsa.pub john.ubante@$host:.ssh/authorized_keys
-    echo "push #1 of 3"
-    #ssh ubante@$host 'echo ubante@yahoo-inc.com > .forward'
-    #ssh john.ubante@$host 'echo john.ubante@locationlabs.com > .forward'
-    ssh jubante@$host 'echo jubante@pinterest.com > .forward'
-    echo " "
-    sleep 1
-    echo "push #2 of 3"
-    #ssh ubante@$host 'mkdir logs bin; ln -sf .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin'
-    #ssh john.ubante@$host 'mkdir logs bin; ln -sf .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin'
-    ssh jubante@$host 'mkdir logs bin; ln -sf .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin'
-    sleep 1
-    echo "push #3 of 3"
-    #cd ; scp -r .startup ubante@$host:
-    _spew $host
-    #ssh ubante@$host "ln -s .startup/vimrc .vimrc"
-    #ssh john.ubante@$host "ln -s .startup/vimrc .vimrc"
-    ssh jubante@$host "ln -s .startup/vimrc .vimrc"
-
-    cd $LOGDIR
-    co -l $LOGFILE
-    echo -n "$host, " >> $LOGFILE
-    date >> $LOGFILE
-    ci -mspewing -u $LOGFILE
-
-    cd $HERE
-  done
-  cd $HERE
-}
-
-function spewharder
-{
-  spewtonewhosts $1
-  ssh -v $1
-}
-
 function itogrep
 { 
     local usage="Usage: itogrep string path_to_log"
@@ -270,94 +207,10 @@ function itogrep
 }
 
 
-function ecf ()
-# force ec, mainly for root
-{
-    co -l $1
-    /usr/bin/vim $1
-    ci -u -m"nocomment" $1
-}
-
 function ec ()
 {
 	echo use git
 }
-
-function ec-old ()
-{
-    DIROWNER=`ls -ld . | awk ' { print $3 } '`
-    if [ $DIROWNER == "vobadm" ]; then
-        echo "You're in the vobs: try using ctec"
-        return
-    fi
-    if [ -h $1 ]; then
-        echo "ec failing: $1 is a symbolic link"
-	ls -ld $1
-        return
-    fi
-    if [ ! -d RCS ]; then
-        echo "no RCS directory - creating....";
-        mkdir RCS
-    fi
-    if [ -d $1 ]; then
-	echo "ec failing: $1 is a directory"
-	ls -ld $1
-	return
-    fi
-    if [ -w $1 ]; then
-        echo "$1 is already writable.  you sure you want to do this?"
-        echo "If so, try ci -u $1"
-	ls -ld $1
-        return
-    fi
-    touch $1
-    co -l $1;
-    /usr/bin/vim $1;
-    ci -u -m"nocomment" $1
-}
-
-function ec2 () 
-{ 
-    DIROWNER=`ls -ld . | awk ' { print $3 } '`
-    if [ $DIROWNER == "vobadm" ]; then
-	echo "You're in the vobs: try using ctec"
-	return
-    fi
-    if [ -h $1 ]; then
-	echo "ec failing: $1 is a symbolic link"
-	return
-    fi
-    if [ ! -d RCS ]; then
-        echo "no RCS directory - creating....";
-        mkdir RCS
-    fi
-    touch $1
-    co -l $1;
-    /usr/bin/vim $1;
-    ci -u $1
-}
-
-function ecdiff ()
-{
-  FILE=$1
-  CURRENT=`head -1 RCS/$1,v | cut -f2 -d\. | cut -f1 -d\;`
-  PREVIOUS=$(( $CURRENT - 1 ))
-  rcsdiff -r1.$PREVIOUS $1
-}
-
-function ecdiff2 ()
-{
-  FILE=$1
-  HERE=`pwd`
-  FILEDIR=`dirname $FILE`
-  FILENAME=`basename $FILE`
-  cd $FILEDIR
-  CURRENT=`head -1 RCS/$FILENAME,v | cut -f2 -d\. | cut -f1 -d\;`
-  PREVIOUS=$(( $CURRENT - 1 ))
-  rcsdiff -r1.$PREVIOUS $FILENAME
-  cd $HERE
-}
-
 
 function trans ()
 {
@@ -391,54 +244,6 @@ function rcfindw ()
 	find -L ~/.startup -type f -exec grep -iw $1 {} /dev/null \; | egrep -v "\.git|RCS|elisp"
 }
 
-function alarm
-{
-	echo 'for i in dude punk dork numnuts farthead; do echo $i, Stand up; echo; sleep 10; done' > /tmp/fufu$$ ;
-	chmod a+x /tmp/fufu$$ ;
-	xterm -bg red -fg black -fn lucidasans-bolditalic-24 -geom 20x10 -e /tmp/fufu$$
-}
-
-function doseti ()
-{
-  cd $HOME
-  for i in working/seti*
-  do
-    cd $i
-    echo In $PWD...
-    ./setiathome-3.08.sparc-sun-solaris2.6 -nice 19 > /dev/null 2>&1 &
-    cd $HOME
-  done  
-}
-
-function dontseti
-{
-  local SETIPIDS=`ps -ef | grep [s]etiathome | awk ' { print $2 } '`
-  firstpid=`echo $SETIPIDS | cut -f1 -d\ `
-  if [ x$firstpid != "x" ]; then
-    echo "Number of seti processes to kill: `echo $SETIPIDS | wc -w`"
-    for pid in $SETIPIDS
-    do
-      kill $pid
-    done
-  fi
-}
-
-function checkseti
-{
-  local HERE=`pwd`
-  cd $HOME
-  for i in working/seti*
-  do
-    cd $i
-    grep prog state.sah
-    cd $HOME
-  done
-  uptime
-  SETIPIDS=`ps -ef | grep [s]etiathome | wc -l`
-  echo "Number of seti processes running: $SETIPIDS"
-  cd $HERE
-}
-
 function sg
 {
   grep $1 `file * | egrep 'script|text' | cut -f1 -d:`
@@ -453,32 +258,6 @@ function jg
 
   for i in `cat /tmp/TempListJavaFiles$$`; do grep $1 $i /dev/null; done
 }  
-
-function helpLemonBlog
-{
-  echo "== 2006-07-31 - 14:50-22:00 PT PG&E outage causes SBC Optemon failure disconnecting Miranda {{bug|29680}} =="
-  echo "* '''Method of Problem Identification:''' All of Miranda was disconnected so identification was widespread and immediate."
-  echo "* '''Service Areas Affected:''' Access from Miranda was broken,  direct access between Hillview and SF was broken.  DNS, replication, SF-sourced emails, and access to the corporate VPN were all affected."
-  echo "* '''Problem Definition:''' A PG&E outage caused SBC hardware failure."
-  echo "* '''Problem Resolution:''' SBC dispatched a technician who determined the root hardware cause."
-  echo "* '''Damage Assessment:''' No client impact."
-  echo "* '''Follow Up Actions Required:''' Results from post-mortem to follow"
-  echo "--~~~~"
-}
-function helpSchedule
-{
-  echo "green means available"
-  echo "blue means committed"
-  echo "light blue means you're trying to dump this commit"
-}
-
-function helpIrc
-{
-  echo "http://usi.corp.yahoo.com/irc/"
-  echo "irssi -c irc.corp.yahoo-inc.com"
-  echo "/connect -ssl irc.corp.yahoo-inc.com 6697 FNjQEMJNhB0B ubante"
-  echo "/connect -ssl irc.corp.yahoo-inc.com 6697 demopass ubante"
-}
 
 function helpSql
 {
@@ -566,28 +345,6 @@ TCL – Transaction Control Language: COMMIT, ROLLBACK, SAVEPOINT
 "
 }
 
-function helpapp
-{
-  echo 'go to https://opel-perf.digitalthink.com/deploy/index.jsp for OPEL version'
-  echo 'AICC - https://aicc.digitalthink.com/aicc/DT_AICCAdapter'
-  echo 'JDS - /usr/local/dthink/etc/[stop|start]'
-  echo 'opel@techbeta - /usr/local/dtopel/bea/wlserver6.1/config/opeltbdomain/startWebLogic.sh'
-  echo 'presedia - login to mon3:8888, user admin, navigate to alert, user dthink, edit, refresh it'
-  echo 'UID: dthink-3001, dtopel-4001, dtlms-5001, dtlc-6001, dtplat-8001, l5ds-9001'
-  echo 'WL ports: LC- 6001, 6011(admin, LMS-7001, 7011(admin), OPEL-8001, 8011(admin), L5DS-9001, 9011(admin)'
-  echo 'WL PERF ports: LMS-7201, 7211(admin) OPEL-8201, 8211(admin)'
-  echo 'JDS labs: labs1/labs2; OPEL labs: labs3/labs4'
-  echo 'Discussion@SC5: bart/lisa'
-  echo 'to test Morgan Stanley: https://harness-qe.digitalthink.com/aicc/index.jsp -> AccountId=asdfasdf; Adapter URL=lms-techbeta.digitalthink.com/; UserId=asdf; CourseId=fc107; asdf for next 3 necessary fields; chose isNewUser; Edit HACP - > hack url to use https://morganstanleyklcontent.edcor.com/HACP.asp for stub for aicc_url value; submit'
-  echo 'or use this url:  http://lms-techbeta.digitalthink.com/aicc/DT_AICCAdapter?REQUEST_TYPE=launch_au&course_id=fc107&account_id=aicc_qe_marsh&aicc_url=https://morganstanleyklcontent.edcor.com/HACP.asp&aicc_sid=123rqwf&subdomain_id=&email='
-  echo 'to test lmsstub:1234/xpadmin_1/1/123456/0/12595'
-  echo 'for SNMP: snmpwalk -c public@lmsapp2 -v 1 cbeta-app1:7161 .1.3.6.1.4.1.140.625.190.1.45'
-  echo '  or: export CLASSPATH=~dtlms/bea/wlserver6.1/lib/weblogic.jar; ~dtlms/bea/jdk131/bin/java snmpwalk -c public@lmsapp1 -p 7161 localhost '
-  echo 'for docdist: change htaccess on staging, testing, lev-ban and lev-hyd: /usr/local/dthink/apache/bin/htpasswd /usr/local/dthink/apache/conf/passwordfile username'
-  echo 'for demo gallery: /usr/local/dthink/apache/conf/passwordfile and http://3rdparty.digitalthink.com/demogallery/index.html'
-  echo 'ClearCase web access: http://pong.digitalthink.com/ccweb/bin/ccweb'
-}
-
 function helpsysadmin
 {
   echo 'openssl x509 -noout -text -in knowledge-cert.cer'
@@ -605,11 +362,6 @@ function helpsysadmin
   echo 'to test DS3 from donner: while (true); do sleep 5; echo; echo; date; ~hlai/netperf_sol2.6/netperf -fM -l 900 -H mon2.back; done'
   echo 'to do it the HTL way: /home/hlai/netperf_sol2.6/netperf -t TCP_STREAM -l 60 -H mon2.back -i 10,3 -I 99,5 -- -s 57344 -S 57344 -m 4096'
   echo 'tw_cli /c0 show'
-}
-
-function helpnis
-{
-  echo 'for NIS: be root on polaris, go to /var/yp/flatfiles; edit passwd; cd security; vi passwd.adjunct using whatever passwd; cd ../../; make; passwd -r nis USERNAME; make; cd /mnt/netapp; mkdir USERNAME; chown USERID USERNAME; go to pong and su to USERNAME to confirm'
 }
 
 function helpwin
@@ -744,56 +496,12 @@ function helpKubernetes
   less ~/.startup/helpKubernetes.txt
 }
 
-function helpnewhost
-{
-  echo "* to check when a host was last jumpstarted: ls -l /root/install.log"
-  echo "* for new hosts, mkdir logs .ssh bin; ln -s .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin"
-  echo "- then NEWHOSTNAME=--newhostname--"
-  echo "ssh \$NEWHOSTNAME 'mkdir logs .ssh bin; ln -s .startup/bash_global .bashrc; echo exec\ bash > .profile; touch .hushlogin'"
-  echo "sleep 2"
-  echo "scp $HOME/.ssh/id_dsa.pub ubante@\$NEWHOSTNAME:.ssh/authorized_keys"
-  echo "sleep 2"
-  echo "scp $HOME/working/spewing/rsync-sparc ubante@\$NEWHOSTNAME:bin/rsync"
-  echo "cd ; scp -r .startup \$NEWHOSTNAME:"
-  echo "spewtohost \$NEWHOSTNAME"
-  echo "* for new hosts: for i in HOSTNAME1 HOSTNAME2; do rof;  ssh -l ubante \$i \"mkdir logs .ssh; ln -s .startup/bash_global .bashrc; echo exec\ bash > .profile\"; scp /export/home/ubante/.ssh/id_dsa.pub ubante@\$i:.ssh/authorized_keys2;  done"
-}
-
-function helpme
-{
-  echo '* To get scrollbar: CTL-Middle; to get kill: CTL-Right'
-  echo '* To find bad memory errors in dmesg:  egrep "AFT|AFSR|Fault_PC|state_5"'
-  echo "* To truss: truss -f -p PID"
-  echo "* This will add up a column: count 1 10 | awk '{t+=$1} END {print t}'"
-  echo "* This lists the branches in a vob: ct lstype -kind brtype"
-  echo "* To create a db: create database dbName"
-  echo "* To reset term: tput init"
-  echo "* For host.conf changes: edit in personal view, deliver, finish-deliver, /vobs/cci_utils/tools/sbin/push -rmprivate -prod stampy, host-conf-builder.pl"
-  echo "* to remove a view: ct rmview -tag VIEW_NAME"
-  echo "* to convert from hex to bin: bc | ibase=16 | obase=2 | hexval "
-  echo "* Primary pagers in active use:"
-  echo "- 415-303-0250 App 2-way"
-  echo "- 877-736-4405 Inf 2-way"
-  echo "- 877-473-6505 DBA 1-way"
-}
-
 function helptunnel
 {
   echo "From X to Z, using Y as a proxy:"
   echo " X: ssh -L 8000:localhost:8000 Y"
   echo " Y: ssh -L 8000:localhost:22 Z"
   echo " X: ssh -p 8000 localhost COMMAND"
-}
-
-function helpconsole
-{
-  echo "to connect to ac200 from a 280R: serialB - tip - db25 (normal) - straight thru ethernet - LOM"
-  echo "to connect to a ac200 from intel: serial - [hyperterm|tip com1] - db9 (normal) - flat cable - LOM"
-  echo "to connect to a ultra 2 from a e250: serialB - tip - db25 (normal) - flat cable - db25 (normal) - serialA"
-  echo "to connect between t1-105s: serialb - flat cable - LOM"
-  echo "to connect to the iDSU from intel: serial - Kentrox DB9-RJ45 adaptor - straight thru - DCE"
-  echo "to use LO's, go to mgr1-[sfi|da1] and console <hostname>.  exit is ctrl-e ctrl-c period"
-  echo "to use rackable in peak space: [josb@dev7-pai lw2]$ ~/ops/config/lw2/scripts/lw-roamer-console chat15-sfi"
 }
 
 function helpvi
@@ -804,12 +512,6 @@ function helpvi
 function helpbrowser
 {
   echo 'javascript:alert(document.cookie) -> display js errors'
-}
-
-function helpstaging
-{
-  echo '/usr/local/apache/bin/add_ht_user.sh'
-  echo 'http://l5-staging:1234'
 }
 
 function getAddress
@@ -896,70 +598,10 @@ function back
 
 }
 
-function checkconf
-{
-  local TEMPFILE=/tmp/checkconf.tmp$$
-  local TEMPSYMLINK=/tmp/checkconf
-  echo "... using $CCI_HOME and $APP_HOME"
-  echo
-  local GC=$CCI_HOME/conf/global.conf
-  local AC=$APP_HOME/conf/app.conf
-  local HC=/prod/ssp/conf/host.conf
-  local VC=$APP_HOME/conf/view.conf
-  echo
-
-  > $TEMPFILE
-  echo "# -------- $GC --------" >> $TEMPFILE
-  cd `dirname $GC`
-  grep . /dev/null `basename $GC` >> $TEMPFILE
-  echo "# -------- $AC --------" >> $TEMPFILE
-  cd `dirname $AC`
-  grep . /dev/null `basename $AC` >> $TEMPFILE
-  echo "# -------- $HC --------" >> $TEMPFILE
-  cd `dirname $HC`
-  grep . /dev/null `basename $HC` >> $TEMPFILE
-  echo "# -------- $VC --------" >> $TEMPFILE
-  cd `dirname $VC`
-  grep . /dev/null `basename $VC` >> $TEMPFILE
-
-  echo -n "global.conf: "
-  ls -l $GC
-  echo -n "app.conf:    "
-  ls -l $AC
-  echo -n "host.conf:   "
-  ls -l $HC
-  echo -n "view.conf:   "
-  ls -l $VC
-
-  rm $TEMPSYMLINK
-  ln -s $TEMPFILE $TEMPSYMLINK
-  echo "The total file is at $TEMPFILE"
-}
-
-function findclobbering
-{
-  local checkconffile=$1
-  local out=/tmp/findclobbering$$
-  local outsymlink=/tmp/findclobbering
-  
-  ( for i in `grep host.conf $checkconffile | grep \=\  | perl -pi -e "s|host.conf:||" | grep -v ^#  | awk ' { print $1 } ' | sort -u | grep -v =`; do rof; grep $i $checkconffile; done ) > $out
-
-  rm $outsymlink
-  ln -s $out $outsymlink
-  echo "check out $outsymlinik"
-
-}
-
 function trns
 {
   str=$@
   echo $str | tr "\n" " "
-}
-
-function trns
-{
-  str=$@
-  echo $str | tr "\n" ","
 }
 
 function trsn 
@@ -981,14 +623,6 @@ function expandJavaInvocation
   echo $fullps | tr " " "\n" | tr ":" "\n"
 }
 
-function ghetcho
-{
-  for i in `count 1 $1`;
-  do
-    echo
-  done
-}
-
 function blankps1
 {
         PS1='> '
@@ -997,18 +631,6 @@ function blankps1
 function blankps2
 {
   export PS1='$(date +%H%M)-\u@\h\[\033[0m\]:\[\033[1;32m\]\W\$ \[\033[0m\]'
-}
-
-function wierdname
-{
-  local freak=$1
-  find . -inum `find . -maxdepth 1 -name \*zz\* -ls | awk ' { print $1 } '` -exec ls -l {} \;
-  echo "find . -inum `find . -maxdepth 1 -name \*zz\* -ls | awk ' { print $1 } '` -exec ls -l {} \;"
-}
-
-function checkmetasync
-{
-  while (true); do echo ; echo "------------------------------------------" ; date ;metastat | egrep "Mirror|prog"; sleep 30; done
 }
 
 function checkmetastat
@@ -1049,103 +671,6 @@ function getProperty
   showproperties | egrep "fromfilename|$1"
 }
  
-function getMfaVersionsForLmsCluster
-{
-  local HERE=$PWD
-  local DOMAINHOME="/nfs/lms/lmsdomain"
-  if [ $1 ]; then
-    DOMAINHOME=$1;
-  fi
-  if [ ! -r $DOMAINHOME ]; then
-    echo "$DOMAINHOME is not readable; exiting."
-    return 1
-  fi
-
-  echo "using this domain home: $DOMAINHOME"
-  APPHOME=$DOMAINHOME/applications
-  AICCFILE=$APPHOME/aicc/META-INF/MANIFEST.MF
-  ASTFILE=$APPHOME/ast.war
-  BEFILE=$APPHOME/be_aicc.ear
-  CISCOFILE=$APPHOME/cisco.ear
-  EDSFILE=$APPHOME/adapters/com/digitalthink/eds/eds.ver
-  EGPFILE=$APPHOME/egp.war
-  LMSFILE=$APPHOME/lms/META-INF/MANIFEST.MF
-  PLSFILE=$APPHOME/pls.ear
-  TEMPDIR=/tmp/listing$$
-  mkdir $TEMPDIR
-  cd $TEMPDIR
-
-  echo -n "-- AICC: " 
-  if [ -r $AICCFILE ]
-  then
-    grep AICC-Version $AICCFILE
-  else
-    echo "can't find $AICCFILE"
-  fi
-  echo -n "-- AST: " 
-  if [ -r $ASTFILE ]
-  then
-    jar xf $ASTFILE META-INF/MANIFEST.MF
-    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-ast
-    grep AST-Version $TEMPDIR/META-INF/MANIFEST.MF-ast
-  else
-    echo "can't find $ASTFILE"
-  fi
-  echo -n "-- BE: " 
-  if [ -r $BEFILE ]
-  then
-    jar xf $BEFILE META-INF/MANIFEST.MF
-    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-be
-    grep BE_AICC-Version $TEMPDIR/META-INF/MANIFEST.MF-be
-  else
-    echo "can't find $BEFILE"
-  fi
-  echo -n "-- CISCO: " 
-  if [ -r $CISCOFILE ]
-  then
-    jar xf $CISCOFILE META-INF/MANIFEST.MF
-    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-cisco
-    grep Cisco-Version $TEMPDIR/META-INF/MANIFEST.MF-cisco
-  else
-    echo "can't find $CISCOFILE"
-  fi
-  echo -n "-- EDS: "
-  if [ -r $EDSFILE ]
-  then
-    grep EDS-Version $EDSFILE
-  else
-    echo "can't find $EDSFILE"
-  fi
-  echo -n "-- EGP: " 
-  if [ -r $EGPFILE ]
-  then
-    jar xf $EGPFILE META-INF/MANIFEST.MF
-    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-egp
-    grep EGP-Version $TEMPDIR/META-INF/MANIFEST.MF-egp 
-  else
-    echo "can't find $EDSFILE"
-  fi
-  echo -n "-- LMS: "
-  if [ -r $LMSFILE ]
-  then
-    grep Lms-Version $LMSFILE
-  else
-    echo "can't find $LMSFILE"
-  fi
-  echo -n "-- PLS: " 
-  if [ -r $PLSFILE ]
-  then
-    jar xf $PLSFILE META-INF/MANIFEST.MF
-    mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-pls
-    grep Pls-Version $TEMPDIR/META-INF/MANIFEST.MF-pls ; echo "CURRENTLY BROKE"
-  else
-    echo "can't find $PLSFILE"
-  fi
-
-  cd $HERE
-  rm -rf $TEMPDIR
-}
-
 function getMfaVersionsForLcCluster
 {
   local HERE=$PWD
