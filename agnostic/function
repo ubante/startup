@@ -61,7 +61,6 @@ function ggrepv
   echo
 }
 
-
 function ngrep
 {
   ggrep \} $1 $2
@@ -176,18 +175,6 @@ function spew
   done
 }
 
-function spewtohosts
-{
-  echo "ubante-4WAHTD6 is the truth"
-  for i in $@
-  do 
-    echo;
-    echo -- $i --;
-    _spew $i
-    echo;
-  done
-}
-
 function itogrep
 { 
     local usage="Usage: itogrep string path_to_log"
@@ -205,7 +192,6 @@ function itogrep
     while ( <IN> ) { if ( m/$1/i ) { print } }" $2
     echo
 }
-
 
 function ec ()
 {
@@ -248,16 +234,6 @@ function sg
 {
   grep $1 `file * | egrep 'script|text' | cut -f1 -d:`
 }
-
-function jg
-{
-  cd $VOBS_HOME
-  echo "searching ...."
-  find . -name \*java | egrep -v "generated|java-lib|jakarta-tom|OptimizeIt|\/apache|logic|java\/examples" > /tmp/TempListJavaFiles$$
-  echo "grepping `wc -l /tmp/TempListJavaFiles$$` files"
-
-  for i in `cat /tmp/TempListJavaFiles$$`; do grep $1 $i /dev/null; done
-}  
 
 function helpSql
 {
@@ -351,16 +327,12 @@ function helpsysadmin
   echo 'morpheus:/usr/openv/netbackup/bin/ ./xbp or xbpadm'
   echo 'arthur cpconfig for lubbin'
   echo 'DNS - rndc reload; sleep 5; tail -f /var/log/named.log'
-  echo 'toaster mounts - on vega/deneb/t2,t3-SAC:morpheus/t3,4-SC5:ne/t0-601, cd to /mnt/toasterN, edit etc/exports, on toasterN, exportfs to check current exports, exportfs -a to HUP mountd, then on mounting host mount, add line like this:'
-  echo '   toaster3:/vol/l5perf/opel-perf - /nfs/opel-perf nfs     -       yes     rw,hard,intr,bg'
   echo 'pw admin on proactive to get console'
   echo 'useradd -u 34940 -d /export/home/ubante -m -c "John Ubante" -s /usr/local/bin/bash ubante'
   echo 'login to siteseer link provided in email, drill down to error'
-  echo 'AICC logging: on both mw7 and mw8 edit /usr/local/dtlms/bea/wlserver6.1/config/itgdomain/properties/lms/properties/lms-log4j.properties to set log level to debug then back to warn'
   echo 'luxadm probe; luxadm display $pathanme{case-sensitive}'
   echo 'mail1:/var/log/exim/mainlog'
   echo 'to test DS3 from donner: while (true); do sleep 5; echo; echo; date; ~hlai/netperf_sol2.6/netperf -fM -l 900 -H mon2.back; done'
-  echo 'to do it the HTL way: /home/hlai/netperf_sol2.6/netperf -t TCP_STREAM -l 60 -H mon2.back -i 10,3 -I 99,5 -- -s 57344 -S 57344 -m 4096'
   echo 'tw_cli /c0 show'
 }
 
@@ -670,133 +642,6 @@ function getProperty
 {
   showproperties | egrep "fromfilename|$1"
 }
- 
-function getMfaVersionsForLcCluster
-{
-  local HERE=$PWD
-  local DOMAINHOME="/nfs/lc/lcdomain"
-  if [ $1 ]; then
-    DOMAINHOME=$1;
-  fi
-  if [ ! -r $DOMAINHOME ]; then
-    echo "$DOMAINHOME is not readable; exiting."
-    return 1
-  fi
-
-  echo "using this domain home: $DOMAINHOME"
-  APPHOME=$DOMAINHOME/applications
-  TEMPDIR=/tmp/listing$$
-  mkdir $TEMPDIR
-  cd $TEMPDIR
-
-  echo -n "-- LC: "
-  grep LC-Version $APPHOME/lc/META-INF/MANIFEST.MF
-  echo -n "-- PLS: "
-  jar xf $APPHOME/pls.ear META-INF/MANIFEST.MF
-  mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-pls
-  grep Pls-Version $TEMPDIR/META-INF/MANIFEST.MF-pls ; echo "CURRENTLY BROKE"
-
-  cd $HERE
-  rm -rf $TEMPDIR
-}
-
-function getMfaVersionsForLcClusterForVersionMatrix
-{
-  local HERE=$PWD
-  local DOMAINHOME="/nfs/lc/lcdomain"
-  echo "using this domain home: $DOMAINHOME"
-  local APPHOME=$DOMAINHOME/applications
-  local TEMPDIR=/tmp/listing$$
-  mkdir $TEMPDIR
-  cd $TEMPDIR
-
-  echo -n "-- LC: "
-  grep LC-Version $APPHOME/lc/META-INF/MANIFEST.MF
-  echo -n "-- PLS: "
-  jar xf $APPHOME/pls.ear META-INF/MANIFEST.MF
-  mv META-INF/MANIFEST.MF META-INF/MANIFEST.MF-pls
-  grep Pls-Version $TEMPDIR/META-INF/MANIFEST.MF-pls ; echo "CURRENTLY BROKE"
-
-  cd $HERE
-  rm -rf $TEMPDIR
-}
-
-function getMfaVersionsForOpelCluster
-{
-  local HERE=$PWD
-  local DOMAINHOME="/nfs/opel/opeldomain"
-  if [ $1 ]; then
-    DOMAINHOME=$1;
-  fi
-  if [ ! -r $DOMAINHOME ]; then
-    echo "$DOMAINHOME is not readable; exiting."
-    return 1
-  fi
-
-  echo "using this domain home: $DOMAINHOME"
-  APPHOME=$DOMAINHOME/applications
-  TEMPDIR=/tmp/listing$$
-  mkdir $TEMPDIR
-  cd $TEMPDIR
-
-  echo -n "-- Opel: "
-  grep Opel-Version $APPHOME/opel/META-INF/MANIFEST.MF
-
-  cd $HERE
-  rm -rf $TEMPDIR
-}
-
-function getMfaVersionsForOpelClusterForVersionMatrix
-{
-  local HERE=$PWD
-  local DOMAINHOME="/nfs/opel/opeldomain"
-  if [ $1 ]; then
-    DOMAINHOME=$1;
-  fi
-  if [ ! -r $DOMAINHOME ]; then
-    echo "$DOMAINHOME is not readable; exiting."
-    return 1
-  fi
-
-  echo "using this domain home: $DOMAINHOME"
-  APPHOME=$DOMAINHOME/applications
-  TEMPDIR=/tmp/listing$$
-  mkdir $TEMPDIR
-  cd $TEMPDIR
-
-  TITLELINE="    Opel    "
-  VERSIONLINE=`grep Opel-Version $APPHOME/opel/META-INF/MANIFEST.MF | awk ' { print $2 } '`
-  echo $TITLELINE
-  echo $VERSIONLINE
-
-  cd $HERE
-  rm -rf $TEMPDIR
-}
-
-function getMfaVersionsForDsCluster
-{
-  HERE=$PWD
-  DOMAINHOME="/usr/local/l5ds/bea/wlserver6.1/config/l5dsdomain" # for techbeta
-  echo "using this domain home: $DOMAINHOME"
-  APPHOME=$DOMAINHOME/applications
-  TEMPDIR=/tmp/listing$$
-  mkdir $TEMPDIR
-  cd $TEMPDIR
-
-  echo -n "-- Ds: "
-  grep L5DS-Version $APPHOME/l5ds/META-INF/MANIFEST.MF
-
-  cd $HERE
-  rm -rf $TEMPDIR
-}
-
-function getMfaVersionsForAllClusters
-{
-  listMfaVersionsForLmsCluster
-  listMfaVersionsForLcCluster
-  listMfaVersionsForOpelCluster
-  listMfaVersionsForDsCluster
-}
 
 function grepApacheConf
 {
@@ -890,24 +735,6 @@ function validateClasspath2
   rm $TEMPFILE
 }
 
-function isTargetted
-{
-  concatConfigXML $1 | egrep "JMSConnection|EJBComponent|JDBCConnectionPool|JDBCTxDataSource|JDBCDataSource|WebAppComponent|MailSession|JMSServer" | grep -v Target
-}
-
-function isDeployed
-{
-  concatConfigXML $1 | grep \<Application\  | grep -v Deployed
-}
-
-function compareConfigXmls
-{
-  concatConfigXML $1 > /tmp/A1$$ 
-  concatConfigXML $2 > /tmp/A2$$ 
-  diff /tmp/A1$$ /tmp/A2$$ 
-  rm /tmp/A1$$ /tmp/A2$$ 
-}
-
 function countLogByMinute
 {
   local STRING=$1
@@ -923,16 +750,6 @@ function countLogByMinute
       grep -c "$PREFACESTRING$i:$j" $LOGFILE;
     done
   done
-}
-
-function findStringInConfigXmlFilesFromAllTheDomains
-{
-  local STRING=$1
-  local HERE=$PWD
-
-  cd /export/configxmls
-  for i in *domain; do rof; concatConfigXML $i | grep -i $STRING; done
-  cd $HERE
 }
 
 function refreshConfigXmls
@@ -1030,14 +847,6 @@ function checkTerminalSize {
   echo "width - $width"
 }
 
-function tailForErrors {
-  tail -f $1 | egrep -i "GC|exception|error|warn|production"
-}
-
-function tailF {
-  tail -f $1 | egrep -i "GC|exception|error|warn|production"
-}
-
 function grepForErrors {
   egrep -i "exception|error|warn|production" $1 | less
 }
@@ -1060,10 +869,6 @@ function makeWikiPropertiesPage {
   done
 }
 
-function pingPager {
-  mail 4153030336@archwireless.net
-}
-
 function extractFileFromTarball {
   TARBALL=$1
   FILE=$2
@@ -1074,16 +879,6 @@ function extractFileFromTarball {
   tar xf $HERE/$TARBALL $FILE
   echo "extracted to $TEMPDIR/$FILE"
   cd $HERE
-}
-
-function tailFF {
-  files=$@
-
-  echo "tailing $@"
-  for i in $files;
-  do
-    tail -f $i | egrep -i "GC|exception|error|warn|production" &
-  done
 }
 
 function rcfinddetailed {
@@ -1101,7 +896,6 @@ function rcfinddetailed {
 
     echo
   done
-  
 }
 
 function getRandomFile () {
@@ -1135,38 +929,8 @@ function cdtempdir {
   pwd
 }
 
-function sshl {
-  SERVERLIST=$1
-  shift
-  HOSTLISTFILE=$HOME/working/hosts/hostswithaccounts
-
-  for i in `cut -f1 -d, $HOSTLISTFILE | grep $SERVERLIST`;
-  do
-    echo -- $i --;
-    s $i $@  
-  done
-}
-
-function killLongCall {
-  echo -n "EVENT:session="
-  echo -n $1
-  echo ";name=docmd;cmd=disconnect;reason=supervisor"
-}
-
-function grepPhutStore {
-  grep $1 ~/working/recycling/phut_stores
-}
-
 function getShipitDate {
   date +%Y-%m-%d\ %H:%M:%S\ PDT
-}
-
-function getHostnamesFromHostsWithAccounts {
-  cut -f1 -d, $HOME/working/hosts/hostswithaccounts | grep -v \#
-}
-
-function f2 {
-  grep $1 /etc/passwd
 }
 
 function helpLO {
@@ -1217,55 +981,6 @@ function getReplicationLag {
   echo "select (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(value))  FROM ccconf.param WHERE name='replicationtime';" | mysql -h$DBHOST -u"configure" -p'valor%dip'
 }
 
-function getCallcenters {
-echo 'mysql> select * from ccconf.callcenter;
-+---------------+---------------------+
-| callcenter_id | name                |
-+---------------+---------------------+
-|             1 | liveops             |
-|             2 | sylmark             |
-|             3 | hcctest             |
-|             4 | performlocal        |
-|             5 | qa                  |
-|             6 | wsol                |
-|             7 | Demo                |
-|             8 | FormerlyKAconvergys |
-|            10 | nh                  |
-|            11 | fidelity            |
-|            12 | testcallcenter      |
-|            13 | vpi                 |
-|            14 | PizzaHut            |
-|            15 | hccdemo             |
-|            16 | wsol2               |
-|            17 | Google              |
-|            18 | MobilityProducts    |
-|            19 | dun_broke           |
-|            20 | Accenture           |
-|            21 | AccDemo             |
-|            22 | BeachBody           |
-|            23 | ACNsandbox          |
-|            24 | IBM                 |
-|            25 | fiddev              |
-|            26 | Techline            |
-|            27 | ACNUUNW             |
-|            28 | zzbroken1           |
-|            29 | ACNPopcorn          |
-|            30 | FidSC               |
-|            31 | LifeLock            |
-|            32 | ACNPopcornMNL       |
-|            33 | zzbroken3           |
-|            34 | zzbroken4           |
-|            35 | SFDCsandbox         |
-|            36 | LUE                 |
-|            37 | ITV                 |
-+---------------+---------------------+'
-}
-
-function findNoRoleDb
-{
-  echo "select * from replviz.dbinfo where ccconf=0 and cclocal=0 and cclog=0 and ccroute=0 and fulfill=0 and ltoolslow=0 and readonly=0 and readwrite=0 and rep=0 and slow=0;" | mysql -h"db2-sfi" -u"configure" -p"valor%dip"
-}
-
 function helpFlickr {
   less $HOME/.startup/helpFlickr.txt
 }
@@ -1298,16 +1013,9 @@ function helpMarkup {
   less $HOME/.startup/helpMarkup.txt
 }
 
-function swapfromscratch {
-  host=$1
-  dbid=$2
-
-  echo "echo \";swap $host -fromScratch bad penny db $dbid/ubante\" | nc MASTER 2200"
-}
-
 function helpNetrek
 {
-    echo "Your controls are listed below.  To change these settings launch the Netrek Configuration program.  A shortcut for this program has been created in your Netrek program group."
+  echo "Your controls are listed below.  To change these settings launch the Netrek Configuration program.  A shortcut for this program has been created in your Netrek program group."
   echo ""
   echo "Mouse Controls:"
   echo "Left Button     -  Phasers"
@@ -1374,28 +1082,6 @@ function helpMac
   echo Command-Shift-g, when in finder to paste full path [yes, this is lame]
 }
 
-function listTechPrefix
-{
-  HOST=$1
-
-  DOIT="echo config | nc cmx${HOST}-sfi 3177 | grep techPrefix"
-  echo $DOIT
-  echo config | nc cmx${HOST}-sfi 3177 | grep techPrefix
-}
-
-function checkKpp
-{
-  HOST=$1
-
-  s tool1-sfi grep $HOST /cc/ops/config/lw2/kb/pod/sf1/*
-}
-
-function checkPeak
-{
-  echo ssr dev8-pai grep cmx57 /var/home/jonv/ops/trunk/config/lw2/kb/pod/sf1/*
-  echo ssr dev8-pai grep raA004839B /var/home/jonv/ops/trunk/config/lw2/kb/hw/sf-hw.kpp
-}
-
 function getPublicIP
 {
   wget --user-agent "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.9) Gecko/20071025 Firefox/2.0.0.9" -O - -q www.whatismyip.com/automation/n09230945.asp; echo
@@ -1407,64 +1093,6 @@ function lssizedir
   do
     du -sk $i
   done | sort -n
-}
-
-function countdownnodes
-{
-  cluster=$1
-  echo -n "Catalog all size:       "
-  range -c %${cluster}:ALL
-  echo -n "Catalog up size:    "
-  range -c %${cluster}
-  echo -n "Catalog critical count: "
-  range %${cluster}:CRITICAL_COUNT
-  echo -n "Catalog warning count:  "
-  range %${cluster}:WARNING_COUNT
-  echo -n "Catalog down count:     "
-  range -c %${cluster}:DOWN
-  echo -n "already ticketed:       "
-  range -c %${cluster}:ALL,\&%yrt
-  echo -n "master thinks there are these many down: "
-  echo ";gnl -down" | nc ${cluster}master 2200 | tail -1 | tr "," " " | wc -w
-
-}
-
-function getmaster
-{
-  cluster=$1
-  range %$cluster:MASTER_HOST
-}
-
-function getgoodnode2
-{
-  cluster=$1
-  master=`getmaster $cluster`
-  goodnode=`echo ";nm get" | nc $master 2200 | grep active | head -1 | cut -f1 -d\ `
-  echo $goodnode
-}
-
-function getgoodnode
-{
-  cluster=$1
-  master=`getmaster $cluster`;
-  goodnodes=`echo ";nm get" | nc $master 2200 | grep active  | cut -f1 -d\ `;
-  count=`echo $goodnodes | wc -w`
-  randomnumber=`getRandomNumberUpTo $count`
-  echo ";nm get" | nc $master 2200 | grep active  | cut -f1 -d\  | head -$randomnumber | tail -1
-}
-
-function getgoodnodeurl
-{
-  cluster=$1
-  goodnode=`getgoodnode $1`
-  echo "http://$goodnode:2281/"
-}
-
-function gogoodnode
-{ 
-  goodnode=`getgoodnode $1`
-  echo "found $goodnode in $1"
-  ssh -v $goodnode
 }
 
 function counttail
@@ -1492,130 +1120,6 @@ function counttail
   done
 }
 
-function counttailsdx
-{
-  if [ -z $1 ]; then
-    count=2000
-  else
-    count=$1
-  fi
-
-  echo -n "Logs starting at: "
-  tail -$count /export/crawlspace/DSCP/catalog/logs/superdex.log | head -1 | cut -c1-20
-  echo -n "Time right now:   "
-  date '+%Y-%m-%d %H:%M:%S'
-  counttail $count /export/crawlspace/DSCP/catalog/logs/superdex.log dispatch successful failed host-delay g2b b2g unmodified
-}
-
-function counttailsdxloop
-{
-  while (true); do date; counttailsdx ; echo; sleep 60; done
-}
-
-function getactivenodes
-{
-  CLUSTER=$1
-  MASTER=`range %$CLUSTER:MASTER_HOST`
-  range `echo ";gnl -active" | nc $MASTER 2200 | tail -1`
-}
-
-function getactivegoodnodes
-{
-  CLUSTER=$1
-  range `echo ";s -v" | nc ${CLUSTER}master 2200 | grep "active\ good" | cut -f1 -d\  | tr "\n" ","`
-}
-
-function getactivegoodrange
-{
-  CLUSTER=$1
-  rawrange=`echo ";s -v" | nc ${CLUSTER}master 2200 | grep "active\ good" | cut -f1 -d\  | tr "\n" ","`
-  rangelist=`range $rawrange | tr "," " "`
-  for i in $rangelist; do echo -n $i:\ \ ;
-	range -c $i
-  done | sort +1 -n
-}
-
-function getactivebadnodes
-{
-  CLUSTER=$1
-  range `echo ";s -v" | nc ${CLUSTER}master 2200 | grep "active" | grep -v "active\ good" | cut -f1 -d\  | tr "\n" ","`
-}
-
-function getactivebadnodescount
-{
-  range -c `getactivebadnodes $1`
-}
-
-function getactivebadnodesnotswapping
-{
-  RANDOM=`getRandomNumber`
-  CLUSTER=$1
-  vitemp=~/tmp/tempfile$RANDOM
-  vitemp2=~/tmp/tempfile2$RANDOM
-
-  echo ";s -v" | nc ${CLUSTER}master 2200 | grep "active" | grep -v "active\ good" | awk ' { print $1 } ' > $vitemp
-  for i in `cat $vitemp`; do grep "swap:$i" sv.out > /dev/null || echo "$i"; done > $vitemp2
-  makerange $vitemp2
-}
-
-function getsparenodes
-{
-  CLUSTER=$1
-  range `echo ";gnl -spare" | nc ${CLUSTER}master 2200 | tail -1`
-}
-
-function getsparegoodnodes
-{
-  CLUSTER=$1
-  range `echo ";s -v" | nc ${CLUSTER}master 2200 | grep "ready\ good" | cut -f1 -d\  | tr "\n" ","`
-}
-
-function getsparegoodnodescount
-{
-  range -c `getsparegoodnodes $1`
-}
-
-function getsparebadnodes
-{
-  m=`getmaster $1`
-  range `echo ";s -v" | nc $m 2200 | grep "\ down\ " | cut -f1 -d\  | tr "\n" ","`
-}
-
-function getsparebadnodescount
-{
-  range -c `getsparebadnodes $1`
-}
-
-function getalladmins
-{
-  echo "working with $ALL_CLUSTERS";
-  alladmins=`( for i in $ALL_CLUSTERS; do range ^%$i; done ; range -e "{gq1admin2con00-9}.yst.yahoo.net","{ac2admin1con00-9}.yst.yahoo.net" ) | sort -u | tr "\n" " "`
-}
-
-function pushtoalladmins
-{
-  file=$1
-  #echo "working with $ALL_CLUSTERS"
-  getalladmins
-  #alladmins=`for i in $ALL_CLUSTERS; do range ^%$i; done | sort -u | tr "\n" " "`
-  echo "found these admins: $alladmins"
-  echo "pushing $1 to /e/c/t now"
-
-  for i in $alladmins;
-  do
-    scp $file $i:/export/crawlspace/tmp &
-  done
-  
-  echo "done"
-}
-
-function makerange
-{
-  file=$1
-
-  range `cat $file | tr "\n" ","`
-}
-
 function mvdate
 {
   file=$1
@@ -1624,156 +1128,15 @@ function mvdate
   mv $file ${file}_$suffix
 }
 
-function dbidtonode
-{
-  node=$1
-  echo ";nm get" | nc lj3master 2200 | perl -ne '$n=$.-4; print "$n $_"' | grep ^$node\ 
-}
-
-function nodetodbid
-{
-  node=$1
-  echo ";nm get" | nc lj3master 2200 | perl -ne '$n=$.-4; print "$n $_"' | grep $node\ 
-}
-
 function isEven 
 {
   somenumber=$1
   perl -e "if (($somenumber/2) == int ($somenumber/2)) { print 0 } else { print 1 }"
 }
 
-function audit-dbid
-{
-  partnernode=""
-  incomingnode=""
-  dbid=$1
-  dbidline=`dbidtonode $dbid`
-  thisnode=`echo $dbidline | cut -f2 -d\  `
-  echo -- looking for dbid $dbid
-  nodeline=`nodetodbid $thisnode`
-  nodetodbid $thisnode
-  incomingnode=`nodetodbid $thisnode | grep swap | cut -f2 -d\ `
-  echo -- finding partner
-  checkEven=`isEven $dbid`
-  if [ $checkEven = "0" ]; then
-        partnerdbid=`expr $dbid + 1`
-        partnerline=`dbidtonode $partnerdbid`
-        echo $partnerline
-        partnernode=`echo $partnerline | cut -f2 -d\ `
-  else
-        partnerdbid=`expr $dbid - 1`
-        partnerline=`dbidtonode $partnerdbid`
-	echo $partnerline
-	partnernode=`echo $partnerline | cut -f2 -d\ `
-  fi 
-  echo -- swap from scratch commands
-  if [ -z $incomingnode ]; then
-      echo "echo \";swap $thisnode -fromScratch too many swaps\" | nc lj3master 2200"
-  else
-      echo "This is incoming: || $incomingnode ||"
-      echo "echo \";backup invalidate -id $dbid\" | nc $partnernode 2280"
-      echo "echo \";shut\" | nc $incomingnode 2280"
-      echo "echo \";shut\" | nc $partnernode 2280 "
-  fi
-  echo
-
-  partnernode=""
-  incomingnode=""
-
-  echo -- checking swap reasons
-  wget --quiet -O - http://lj3master.yst.yahoo.net:2201/alertsList.html?name=swappedOut | grep "dbid=$dbid)" | perl -ne 'm|>(20\d\d[\d-]*).*(\d\d:\d\d:\d\d).*(\(dbid=[\d]*[^<]*)| && print "$1 $2: $3\n"'
-
-}
-
-function getlj3testnodes
-{
-  echo ";nm get" | nc lj3master 2200 | perl -ne '$n=$.-4; print "$n $_"' | egrep "^72 |^73 |^84 |^85 |^96 |^97 |^108 |^109 |^120 |^121 " | awk ' { print $2 } '
-}
-
-function checklj3testnodes
-{
-  for i in `getlj3testnodes`;
-  do rofn ; echo ";version" | nc $i 2280 | tail -1; done
-}
-
-function validatetestnodes
-{
-  actual=`getlj3testnodes | range -`;
-  expected=`echo ";cvar get cm.autoswap.ignoreList" | nc lj3master 2200 | tail -1`;
-  echo "actual minus expected"
-  range {$actual},-{$expected};
-  echo "expected minus actual"
-  range {$expected},-{$actual}
-}
-
-function checkslaveclients
-{
-  echo -n "Control logs starting at: ";
-
-  CONTROLLOG=/export/crawlspace/DSCP/catalog/logs/control.log
-  #CONTROLLOG=/home/ubante/tmp/control.log
-  IGNORE="quit|cdma|adminhost|ystlab|csdev"
-
-  tail -10000 $CONTROLLOG | head -1 | cut -c1-20;
-  echo -n "Time right now:           ";
-  date '+%Y-%m-%d %H:%M:%S';
-  echo "the most common clients:"
-  tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort | uniq -c | sort | tail
-  echo
-  echo "These clients belong to these clusters:"
-  range *"{`tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort -u | tr "\n" ","`}"
-}
-
-function checkmasterclients
-{
-  echo -n "Control logs starting at: ";
-
-  CONTROLLOG=/export/crawlspace/DSCP/catMaster/logs/control.log
-  #CONTROLLOG=/home/ubante/tmp/control.log
-  IGNORE="quit|cdma|adminhost|ystlab|csdev"
-
-  tail -10000 $CONTROLLOG | head -1 | cut -c1-20;
-  echo -n "Time right now:           ";
-  date '+%Y-%m-%d %H:%M:%S';
-  echo "the most common clients:"
-  tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort | uniq -c | sort | tail
-  echo
-  echo "These clients belong to these clusters:"
-  range *"{`tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort -u | tr "\n" ","`}"  
-}
-
-function checkmasterclientslong
-{
-  echo -n "Control logs starting at: ";
-
-  CONTROLLOG=/export/crawlspace/DSCP/catMaster/logs/control.log
-  IGNORE="quit|cdma|adminhost|ystlab|csdev"
-
-  head $CONTROLLOG | tail -1 | cut -c1-20;
-  echo -n "Time right now:           ";
-  date '+%Y-%m-%d %H:%M:%S';
-  echo "the most common clients:"
-  cat $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort | uniq -c | sort | tail
-  echo
-  echo "These clients belong to these clusters:"
-  range *"{`tail -10000 $CONTROLLOG | grep command | egrep -v $IGNORE | cut -f2 -d\= | cut -f1 -d, | sort -u | tr "\n" ","`}"
-}
-
 function dateprefix ()
 {
   perl -MPOSIX -ne 'print strftime("%Y/%m/%d %H:%M:%S", localtime()), ": $_";'
-}
-
-function setignore ()
-{
-  IGNORE="{`echo ';cvar get cm.autoswap.ignoreList' | nc lj3master 2200 | tail -1`}"
-}
-
-function simplecatalogtest ()
-{
-  # this is from admintools/catalog-check - it may be incomplete
-  wget -T 3 -t 2 -q -O /dev/null http://test.com/ || echo LLF failed
-  xterm -display localhost:1 -e sleep 1 || echo "Mozilla check (vnc) failed"
 }
 
 function hosttoip ()
@@ -1785,11 +1148,6 @@ function hosttoip ()
 function dateprefix ()
 {
   perl -MPOSIX -ne '$|++; print strftime("%Y/%m/%d %H:%M:%S", localtime()), ": $_";'
-}
-
-function hoststorange ()
-{
-  range *"{$1}"
 }
 
 function longpath ()
@@ -1807,235 +1165,8 @@ function longerpath ()
   echo " . "
 }
 
-
-function pushnewcopsbuild ()
-{
-  # will push out the newest cops_tools build (promoted or not)
-  # to admins
-
-  HERE=$PWD
-
-  echo
-  echo "PHASE 1: the push"
-  cd /nfs/ystools/vol/ystools/ystbuildroot/ci/jobs/cops_tools_trunk_secondary/builds
-  newestbuild=`/bin/ls -rt | grep -v ^201 | tail -1`
-  cd $newestbuild/archive/artifacts/
-  build=`echo cops_tools*`
-  buildshort=`echo $build | cut -f1-3 -d\.`
-  echo "found #build $newestbuild and copying out $build"
-
-  admins="gq1admin2con08 gq1admin2con09 ac2admin1con08"
-  for i in $admins; do rof; 
-    scp $build $i:/export/crawlspace/tmp &
-  done
-
-  cd $HERE
- 
-  echo
-  echo "PHASE 2: the switch"
-  echo "# for cops_util, become perm@gq1admin2con08"
-  echo "tar zxvf /export/crawlspace/tmp/$build -C cops_tools/"
-  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
-  echo "~/bin/uberSwitch -c cops -r b3060358.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
-  echo
-  echo "# for lj3, become perm@gq1admin2con08"
-  echo "tar zxvf /export/crawlspace/tmp/$build -C cops_tools/"
-  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
-  echo "~/bin/uberSwitch -c cops -r %lj3 cops_tools/${buildshort}rc${newestbuild}"
-  echo
-  echo "# for wccmasters, become perm@gq1admin2con09"
-  echo "tar zxvf /export/crawlspace/tmp/$build -C cops_tools/"
-  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
-  echo "~/bin/uberSwitch -c cops -r b3130000.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
-  echo "~/bin/uberSwitch -c cops -r b3130480.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
-  echo
-  echo "# for an adminnode itself, become perm@gq1admin2con09"
-  echo "tar zxvf /export/crawlspace/tmp/$build -C cops_tools/"
-  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
-  echo "rm /export/crawlspace/perm-local/cops_tools"
-  echo "ln -s /home/perm/cops_tools/${buildshort}rc${newestbuild} /export/crawlspace/perm-local/cops_tools"
-}
-
-function pushnewcopsbuild-quick ()
-{
-  # will push out the newest cops_tools build (promoted or not)
-  # to admins
-
-  HERE=$PWD
-
-  echo
-  echo "PHASE 1: the push"
-  CTOOLBUILDDIR=/nfs/ystools/vol/ystools/ystbuildroot/ci/jobs/cops_tools_trunk_secondary/builds
-  cd /nfs/ystools/vol/ystools/ystbuildroot/ci/jobs/cops_tools_trunk_secondary/builds
-  newestbuild=`/bin/ls -rt | grep -v ^201 | tail -1`
-  cd $newestbuild/archive/artifacts/
-  build=`echo cops_tools*`
-  buildshort=`echo $build | cut -f1-3 -d\.`
-  echo "found #build $newestbuild and copying out $build"
-  fullpath=/export/crawlspace/tmp/${build}rc${newestbuild}
-  admins="gq1admin2con08 gq1admin2con09 ac2admin1con08"
-  for i in $admins; do rof;
-    #scp $build $i:/export/crawlspace/tmp
-    echo "skipping the copy: scp $CTOOLBUILDDIR/$newestbuild/archive/artifacts/$build $i:$fullpath"
-  done
-
-  cd $HERE
-
-  echo
-  echo "PHASE 2: the switch"
-  echo "# for cops_util, become perm@gq1admin2con08"
-  echo "tar zxvf $fullpath -C cops_tools/"
-  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
-  echo "~/bin/uberSwitch -c cops -r b3060358.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
-  echo
-  echo "# for lj3, become perm@gq1admin2con08"
-  echo "tar zxvf $fullpath -C cops_tools/"
-  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
-  echo "~/bin/uberSwitch -c cops -r %lj3 cops_tools/${buildshort}rc${newestbuild}"
-  echo
-  echo "# for wccmasters, become perm@gq1admin2con09"
-  echo "tar zxvf $fullpath -C cops_tools/"
-  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
-  echo "~/bin/uberSwitch -c cops -r b3130000.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
-  echo "~/bin/uberSwitch -c cops -r b3130480.yst.yahoo.net cops_tools/${buildshort}rc${newestbuild}"
-  echo
-  echo "# for an adminnode itself, become perm@gq1admin2con09"
-  echo "tar zxvf $fullpath -C cops_tools/"
-  echo "mv cops_tools/$buildshort cops_tools/${buildshort}rc${newestbuild}"
-  echo "rm /export/crawlspace/perm-local/cops_tools"
-  echo "ln -s /home/perm/cops_tools/${buildshort}rc${newestbuild} /export/crawlspace/perm-local/cops_tools"
-}
-
-function whatismydbid ()
-# unfinished
-{
-  name=`hostname`
-  shortname=`echo $name | cut -f1 -d.`
-  cluster=`range *$name`
-  master=`range %$cluster:MASTER_HOST`
-  
-}
-
-function printWikiStub {
-  echo '%INCLUDE{"WccStyle"}%'
-  echo 
-  echo
-  echo '%INCLUDE{"WccFooter"}%'
-}
-
-function findvm2 {
-  for i in `/bin/ps -ef | grep [j]ava | tr " " "\n" | grep ^org`; do
-    pid=`/bin/ps -ef | grep $i | grep -v grep | awk ' { print $2 } '`
-    printf "%5s: %s\n" $pid $i
-  done
-}
-
-function findvmold {
-  for i in `/bin/ps -ef | grep [j]ava | tr " " "\n" | grep ^org`; do
-    pid=`/bin/ps -ef | grep $i | grep -v grep | awk ' { print $2 } '`
-    printf "%5s: %s\n" $pid $i
-  done
-}
-
-function findvm {
-  for i in `/bin/ps -ef | grep [j]ava | tr " " "\n" | grep ^org | sort -u`; do
-    pid=`/bin/ps -ef | grep $i | grep -v grep | awk ' { print $2 } '`
-
-    combined=""
-    for j in $pid; do combined="$j:$combined"; done
-    printf "%15s %s\n" $combined $i
-
-  done
-}
-
 function getip {
   host `who -m | perl -ane ' /\((.*)\)/ && print $1 '` | cut -f4 -d\ 
-}
-
-function doublednsreverselookup {
-# useful for debugging apache mod_access
-  ip=$1
-  fqdn=`host $1 | cut -f5 -d \  `
-  ip2=`host $fqdn | grep address | awk ' { print $4 } '`;
- 
-  echo "Given IP: $ip"
-  echo "Reverse:  $fqdn" 
-  echo "Rev IP:   $ip2"
-  echo
-  if [ $ip = $ip2 ]; then
-    echo "success"
-  else
-    echo "failure"
-  fi
-}
-
-function getaddress {
-echo John Ubante
-echo c/o Yahoo
-echo 475 Sansome Street
-echo San Francisco, CA, 94111
-}
-
-function quick_pc_check {
-  echo -n checking yapache:\ 
-  ps -ef | grep [y]apache | wc -l
-
-  echo; echo -n checking ysquid:\ 
-  ps -ef | grep [y]squid | wc -l
-
-  echo; echo -n checking nginx:\ 
-  ps -ef | grep [n]ginx | wc -l
-
-  echo; echo -n checking mounts:\ 
-  #df -P | grep -v Available -c
-  df -P -x ext2 -x ext3 -x tmpfs | grep -v Available -c
-
-  echo; echo -n statuses:\ 
-  status=`ystatus status | grep -a3 running | grep ^[a-z] | cut -f1 -d: | tr "\n" " "`
-  echo $status | wc -w
-  echo $status
-  echo
-}
-
-function quick_sm_check {
-  echo -n checking JVMs:\ 
-  ps -ef | grep [S]MServer | perl -lane ' print join " ", @F[0,1,-1] '
-
-  echo; echo -n checking mounts:\ 
-  df -P -x ext2 -x ext3 -x tmpfs | grep -v Available -c
-}
-
-function sample_host {
-  echo $FARM_HOSTS | tr " " "\n" | grep cache$1
-}
-
-function bigstatus {
-  echo Starting farm$1
-  for i in vip old_vip akamai farm$1;
-  do
-    echo -- $i --
-    ystatus start $i
-  done
-}
-
-function stall {
-# because Cisco DisConnect
-  while (true); do date; sleep 300; done
-}
-
-function monack {
-  host=$1
-  monstatus ack --yes --host $host --add "acking"
-}
-
-function mondt {
-  host $1
-  monstatus downtime --yes --host $host "downtiming"
-}
-
-function dbdata2 {
-  db=$1
-  ssh build.flickr.corp.mud.yahoo.com /usr/local/flickr/bin/dbdata $db | grep -E "sidea|sideb|bcppair" | awk ' { print $2 } '
 }
 
 function mcd {
@@ -2045,43 +1176,11 @@ function mcd {
   pwd
 }
 
-function diffNoTime
-{
-    inputA=$1
-    inputB=$2
-
-	if [ x$inputB = x ] ; then
-		echo "Usage: diffNoTime file1 file2"
-		return
-	fi
-
-    here=$PWD
-    temp
-    cd $here
-    RANDOMA=`getRandomNumber`
-    RANDOMB=`expr $RANDOMA + 1`
-    fileA=~/tmp/diff$RANDOMA
-    fileB=~/tmp/diff$RANDOMB
-    echo comparing $inputA and $inputB
-    echo making $fileA and $fileB
-    cat $inputA | perl -pe 's/2013-\d\d-\d\d/2013-MM-DD/g' | perl -pe 's/\d\d:\d\d:\d\d/hh:mm:ss/g' | perl -pe 's/mm:ss,\d\d\d/mm:ss,fff/' | perl -pe 's|13/\d\d/\d\d|13/MM/DD|g' > $fileA
-    cat $inputB | perl -pe 's/2013-\d\d-\d\d/2013-MM-DD/g' | perl -pe 's/\d\d:\d\d:\d\d/hh:mm:ss/g' | perl -pe 's/mm:ss,\d\d\d/mm:ss,fff/' | perl -pe 's|13/\d\d/\d\d|13/MM/DD|g' > $fileB
-
-    diff $fileA $fileB
-    rm $fileA $fileB
-}
-
 function cdcd {
     file=$1
     dir=`dirname $file`
 
     cd $dir
-}
-
-function helpBug {
-    echo "Hello YNOC,
-
-I’m a Yahoo that uses our products.  Since I’m concerned about how the public, customers and other Yahoos see our stuff, I’d like to report a possible problem with $1."
 }
 
 function decode {
@@ -2096,38 +1195,6 @@ function syncStartup
     cd
     rsync -avze ssh sorrytake.corp.yahoo.com:/home/ubante/.startup . 
     cd $HERE
-}
-
-function eis {
-  host=$1
-  now=`_getDetailedDate2`
-  [ -e ~/tmp/$host ] && mv ~/tmp/$host ~/tmp/$host-$now
-  explodeigor -s $host | tee ~/tmp/$host
-  echo; echo;
-  vim ~/tmp/$host
-  echo check out ~/tmp/$host
-}
-
-function gogetyinstpackage {
-  package=$1
-  cd ~/tmp
-  mkdir $package
-  cd $package
-  yinst fetch $package
-  tar zxvf ${package}*
-  echo; echo;
-  ls
-}
-
-function getFreshCookie {
-  echo "Getting a fresh Backyard cookie"
-  echo
-  echo -n "Enter your password: "
-  read -s password
-  echo
-  curl --insecure -c cyby.txt -d "id=ubante&pass_word=$password&action=login" https://by.bouncer.login.yahoo.com/login/ > bouncer.html
-  echo
-  echo use: curl -b cyby.txt -o OUTPUTFILE http://i.love.bacon.com
 }
 
 function helpOpus {
@@ -2162,201 +1229,6 @@ function printColors {
   printf "This is ${YELLOW}yellow${NC}.\n"
   echo -e "This is ${BLUE}blue${NC}."
   echo -e "This is ${GRAY}gray${NC}."
-}
-
-function gitclone {
-  # The new structure will be:
-  # ~/src/VCS-universe/org/repo
-  # eg:
-  # /Users/j.ubante/src/github.com/GoogleCloudPlatform/terraformer
-
-  srcDir=~/src
-  repository=$1
-
-  if [ -z $repository ] ; then
-    echo "Usage: gitclone reponame"
-    echo
-    echo "This will create a dir tree in ${srcDir}."
-    echo
-    echo "Example: gitclone git@github.com:GoogleCloudPlatform/terraformer.git"
-    return 1
-  fi
-
-  vcsDir=`echo $repository | cut -f1 -d\: | cut -f2 -d@`
-  orgDir=`echo $repository | cut -f2 -d\: | cut -f1 -d\/`
-  repoDir=`echo $repository | cut -f2 -d\/ | cut -f1 -d\.`
-
-  vcsPath=$srcDir/$vcsDir
-  orgPath=$vcsPath/$orgDir
-  repoPath=$orgPath/$repoDir
-  
-  if [ -e $repoPath ]; then
-    echo "This already exists: $repoPath"
-    if ( _yes_no "$repoDir repo already exists.  Archive? [y/n] "); then
-      echo "Archiving to $GRITYARD..."
-
-	  # This could go into a new function, grityardcore, and be reused by the griyard function.
-      getLastChar $repoPath
-      now=`_getDetailedDate2`;
-      destdir=$GRITYARD/${repoDir}_$now;
-	  echo Moving $repoPath to $destdir
-      mv $repoPath $destdir || (echo fatal problems && return)
-
-      echo "Re-cloning..."
-    else
-      ls -ld $repoPath
-      cd $repoPath
-      echo Local:
-      git --no-pager branch
-      echo Remote:
-      git --no-pager branch -r
-      echo
-      git status
-      echo
-      echo Be sure to git pull....
-
-      return 1
-    fi
-  fi
-
-  for aPath in $vcsPath $orgPath; do
-    if [ ! -e $aPath ]; then
-      echo "Creating $aPath"
-      mkdir $aPath
-    fi
-  done
-
-  #echo $repoPath && return
- 
-  cd $orgPath
-  echo "Trying to clone ${repository}...."
-  git clone ${repository} || return 1
-  cd $repoDir
-  echo
-  pwd
-  echo
-  echo Remote:
-  git --no-pager branch -r
-  echo Local:
-  git --no-pager branch
-  pwd
-}
-
-function gitclonell {
-  # The new structure will be:
-  # ~/src/VCS-universe/org/repo
-  # eg:
-  # /Users/john.ubante/src/github-ll/ig/deploy.infra_baseline
-
-  repository=$1
-
-  if [ -z $repository ] ; then
-    echo "Usage: gitclone reponame"
-    echo
-    echo "Example: gitclone ig/deploy.resolvconf_fix"
-    return 1
-  fi
-
-  orgDir=`echo $repository | cut -f1 -d\/`
-  repoDir=`echo $repository | cut -f2 -d\/`
-
-  if [ -e $repoDir ]; then
-    echo -n "You are in: "
-    pwd
-    if ( _yes_no "$repository already exists.  Delete? [y/n] "); then
-      echo "Deleting..."
-      rm -rf $repoDir
-      echo "Re-cloning..."
-    else
-      ls -ld $repoDir
-      cd $repoDir
-      echo Local:
-      git --no-pager branch
-      echo Remote:
-      git --no-pager branch -r
-      echo
-      git status
-      echo
-      echo Be sure to git pull....
-
-      return 1
-    fi
-  fi
-
-  gitpath=git@github.int.llabs.io:${orgDir}/${repoDir}.git 
-  echo "Trying to clone ${gitpath}...."
-  git clone ${gitpath} || return 1
-  cd $repoDir
-  echo
-  pwd
-  echo
-  echo Local:
-  git --no-pager branch
-  echo Remote:
-  git --no-pager branch -r
-
-  # Check to see if you're in a tree
-  echo
-  parentDir=$(basename `dirname $PWD`)
-  if [ $orgDir = $parentDir ]; then
-    echo -ne "${GREEN}You are in this repo tree: "
-    pwd
-    echo -e "${NC}"
-  else
-    echo -e "${YELLOW}WARNING: you are not in the right org directory.${NC}"
-    echo "I expected you to be in the $orgDir directory tree and you are in:"
-    pwd
-  fi
-  
-}
-
-function gitclonelegacy {
-  repository=$1
-
-  if [ -z $repository ] ; then 
-    echo "Usage: gitclonelegacy reponame"
-    echo
-    echo "Stop using this because it talks to cgit which is deprecated."
-    echo
-    echo "Example: gitclonelegacy ig/deploy/resolvconf"
-    return 1
-  fi
-    
-  repoDir=`echo $repository | sed 's/\//__/g'`
-
-  if [ -e $repoDir ]; then
-    echo -n "You are in: "
-    pwd
-    if ( _yes_no "$repository already exists.  Delete? [y/n] "); then
-      echo "Deleting..."
-	  rm -rf $repoDir
-	  echo "Re-cloning..."
-	else
-      ls -ld $repoDir
-      cd $repoDir
-      echo Local:
-      git --no-pager branch
-      echo Remote:
-      git --no-pager branch -r
-   	  echo
-      git status
-      echo
-  	  echo Be sure to git pull....
-
-      return 1
-	fi
-  fi
-
-  #/usr/local/bin/git clone git@git.evdc.wavemarket.com:$repository $repoDir
-  git clone git@git.evdc.wavemarket.com:$repository $repoDir || return 1
-  cd $repoDir
-  echo
-  pwd
-  echo
-  echo Local:
-  git --no-pager branch
-  echo Remote:
-  git --no-pager branch -r
 }
 
 function count { 
@@ -2430,17 +1302,6 @@ function gcm {
   git --no-pager branch -r
 }
 
-function checkDnsServers {
-  for domain in engr evdc evidc hq sfdc; 
-  do 
-    for ns in ns1 ns2; 
-    do 
-      fqdn=${ns}.${domain}.wavemarket.com; 
-      host $fqdn; 
-    done; 
-  done
-}
-
 function set_terminal_title {
   echo -n -e "\033]0;$1\007"
 }
@@ -2484,27 +1345,6 @@ function gfogrom {
     echo
 }
 
-# You have to first cd into the root of the repos, eg
-# cd /Users/j.ubante/src/github.com/GlossGenius
-# TODO: add some checks to make sure the CWD is correct.
-function update_repos {
-	for i in *;
-	do 
-		rof; 
-		cd $i; 
-		gb; 
-#		if ( _yes_no "are you in main or master?" ); then 
-#			echo doing it; 
-#			gfogrom;
-#		else 
-#			echo skipping; 
-#		fi; 
-		gfogrom
-		cd ..;
-		echo 
-	done
-}
-
 # This will quickly add and commit changes in CWD.
 # gagcm = git add git commit -m
 function gagcm {
@@ -2518,7 +1358,6 @@ function gagcm {
   echo $1
 
   git add . && git commit -m "$1"
-
 }
 
 
